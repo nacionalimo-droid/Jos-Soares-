@@ -212,6 +212,11 @@ if current_tab is None:
     st.stop()
 
 # Profile selector (shown once per tab)
+# Use a flat session_state key as the source of truth (more reliable than nested dict mutation)
+_profile_state_key = f"tab_profile_{current_tab['id']}"
+if _profile_state_key in st.session_state and st.session_state[_profile_state_key]:
+    current_tab["profile"] = st.session_state[_profile_state_key]
+
 if current_tab["profile"] is None:
     st.subheader("👤 To give you accurate advice, what is your current status in Portugal?")
     profile_choice = st.selectbox(
@@ -219,12 +224,13 @@ if current_tab["profile"] is None:
         ["— Please select —", "Short-term Tourist", "Digital Nomad / Remote Worker", "Golden Visa / Investor", "Long-term Expat"],
         key=f"profile_select_{current_tab['id']}",
     )
-    if profile_choice != "— Please select —":
-        current_tab["profile"] = profile_choice
-        st.rerun()
-    else:
+    if profile_choice == "— Please select —":
         st.info("Please select your profile to begin your consultation.")
         st.stop()
+    else:
+        current_tab["profile"] = profile_choice
+        st.session_state[_profile_state_key] = profile_choice
+        # No rerun needed — continue rendering the chat below
 
 # Show profile badge
 st.caption(f"Profile: **{current_tab['profile']}** | Consultation: *{current_tab['name']}*")
