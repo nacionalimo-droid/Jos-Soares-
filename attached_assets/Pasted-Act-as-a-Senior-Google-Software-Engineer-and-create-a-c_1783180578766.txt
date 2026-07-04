@@ -1,0 +1,45 @@
+Act as a Senior Google Software Engineer and create a complete Python web application using the Streamlit library. The official name of the application is "LawBuddy Portugal" (Amigo da Lei em Portugal) — an AI-powered assistant designed to explain Portuguese laws, bureaucracy, and compliance exclusively to international tourists, digital nomads, and expats traveling to or living in PORTUGAL. I am the owner and administrator of the project.
+
+Generate the code in a resilient, single 'main.py' file structured with the following mandatory specifications (all UI text must be in English):
+
+1. GEOGRAPHIC FOCUS & AI SAFETY RAILS (PORTUGAL ONLY):
+- Configure the AI engine system prompt with a strict rule: "You are an expert EXCLUSIVELY in Portuguese jurisdiction and laws. If a user asks about the laws of China, USA, or any other country outside of Portugal, politely decline and state that LawBuddy Portugal only provides legal assistance for Portugal."
+- Clearly display the Portugal Flag (🇵🇹) and the text "Your Legal Guide in Portugal" at the very top of the app to instantly set user expectations.
+
+2. ADVANCED SESSION PERSISTENCE & ANTI-REFRESH PROTECTION:
+- Implement a dual-layer tracking mechanism using Streamlit's session state combined with a simulated local browser fingerprint/cookie mechanism to prevent users from bypassing limits by simply refreshing the page (F5) or restarting the session.
+- Once a user has consumed their free limits, the state must remain locked until cleared via the anti-cheat verification or a successful Whop unlock signal.
+
+3. RATE LIMITING & COST PROTECTION (ANTI-BOT):
+- Implement a mandatory cooldown timer between messages for free-tier users. A user must wait at least 30 seconds between consecutive chat inputs to prevent automated script abuse and protect the owner's AI API budget from rapid depletion.
+
+4. PORTUGAL EMERGENCY & UTILITY COMPASS (SIDEBAR):
+- Create a prominent section in the sidebar named "🚨 Portugal Emergency Contacts".
+- Display vital numbers: General Emergency (112), National Health Line (SNS 24 - 808 24 24 24), and Immigration Support (AIMA contact info).
+- Add a "Clear All My Data & History" button at the bottom of the sidebar to ensure strict compliance with European GDPR privacy laws.
+
+5. PREMIUM SIDEBAR & CONVERSATION HISTORY:
+- Design a minimalist and elegant left sidebar (ChatGPT style) to manage conversation history.
+- The user can click a prominent "+ New Consultation" button to open and name a new chat tab.
+- Build an internal fallback dictionary containing simulated real-time data about crucial Portuguese regulations updated for 2026 (e.g., AIMA immigration appointments, Tourist Taxes in Lisbon/Porto/Algarve, Driving laws, and Digital Nomad Visa requirements). Display the top 3 most important Portuguese compliance tips dynamically in the sidebar.
+
+6. USER PROFILE CUSTOMIZATION:
+- At the top of every new chat, display the question: "To help LawBuddy Portugal give you accurate advice, what is your current status?" with a dropdown menu including: [Short-term Tourist, Digital Nomad / Remote Worker, Golden Visa / Investor, Long-term Expat].
+- The AI must read this profile context secretly in the chat history to prioritize Portuguese legal advice regarding stay limits (90-day Schengen rule), NHR tax optimization, rental contracts, or local business setup.
+
+7. FREEMIUM BUSINESS MODEL & ANTIFRAUD LOCKING SYSTEM (MONETIZATION):
+- Anonymous/free tier users are strictly limited to a maximum of 2 chat tabs and 5 total messages per session.
+- Total Lockout: As soon as the user tries to send their 6th message or open a 3rd tab, block the chat input entirely using 'st.chat_input(disabled=True)'.
+- Premium Upgrade Card: Display a beautifully styled informational card in the center of the screen reading: "🔓 Your free LawBuddy Portugal memory has expired. Upgrade now to unlock unlimited AI consultations about Portuguese law, permanent chat history, and automated real-time local law alerts."
+- Action Buttons & Anti-Cheat Viral System inside the Lockout Card:
+  * Generate a dynamic 4-digit verification code in session state (e.g., #LB74).
+  * Button 1: "📢 Share on WhatsApp for +3 Free Questions". It must trigger an external link to 'https://whatsapp.com out LawBuddy Portugal! Your personal AI legal guide in Portugal. Use my invite code [CODE] to get started!' (replace [CODE] with the generated 4-digit code).
+  * Verification Input: Provide a small text input field where the user must type the correct 4-digit code shown on screen to "Verify Share". If correct, add +3 to their message limit and refresh to unlock.
+  * Button 2: "🔓 Unlock Full Lifetime Access via Whop ($19/mo)" (simulates redirection to your Whop checkout page supporting Apple Pay, Google Pay, and Credit Cards).
+
+8. PORTUGUESE COMPLIANCE AI ENGINE:
+- Integrate the default Replit LLM or OpenAI API model ('gpt-4o') ensuring the AI answers based strictly on Portuguese jurisdiction (Legislação de Portugal) and European border guidelines.
+- The tone must be that of a wise, protective, and welcoming local Portuguese counselor, avoiding overly complex legal jargon, but translating laws into simple English.
+- Automatically append this text in italics at the bottom of every AI response: "Note from LawBuddy Portugal: This consultation is for informational purposes only regarding Portuguese law and compliance. It does not substitute official legal counsel from a Portuguese lawyer."
+
+Ensure the code is perfectly clean, completely free of Streamlit syntax bugs, and includes try/except blocks to guarantee the app is instantly functional for launch.
