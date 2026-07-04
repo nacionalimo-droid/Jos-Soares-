@@ -1,0 +1,29 @@
+kind = "web"
+previewPath = "/"
+title = "LawBuddy Portugal"
+version = "1.0.0"
+id = "artifacts/lawbuddy"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25832
+
+[services.development]
+run = "bash -c '(test -d $REPL_HOME/artifacts/lawbuddy/.venv || python3 -m venv $REPL_HOME/artifacts/lawbuddy/.venv) && $REPL_HOME/artifacts/lawbuddy/.venv/bin/pip install -r $REPL_HOME/artifacts/lawbuddy/requirements.txt -q && $REPL_HOME/artifacts/lawbuddy/.venv/bin/python3 -m streamlit run $REPL_HOME/artifacts/lawbuddy/app.py'"
+
+[services.production]
+
+[services.production.build]
+args = ["bash", "-c", "python3 -m venv artifacts/lawbuddy/.venv && artifacts/lawbuddy/.venv/bin/pip install -r artifacts/lawbuddy/requirements.txt -q"]
+
+[services.production.run]
+args = ["artifacts/lawbuddy/.venv/bin/python3", "-m", "streamlit", "run", "artifacts/lawbuddy/app.py"]
+
+[services.production.health.startup]
+path = "/"
+
+[services.env]
+PORT = "25832"
+BASE_PATH = "/"

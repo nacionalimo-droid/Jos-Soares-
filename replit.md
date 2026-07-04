@@ -1,45 +1,53 @@
-# [Project name]
+# LawBuddy Portugal
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+AI-powered assistant that explains Portuguese laws, bureaucracy, and compliance exclusively to international tourists, digital nomads, and expats — with a freemium business model monetised via Whop.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `LawBuddy Portugal` workflow — runs the Streamlit app on port 5000
+- Command: `.venv/bin/python3 -m streamlit run app.py --server.port 5000`
+- Python deps live in `.venv/` (created with `python3 -m venv .venv`)
+- To reinstall deps: `.venv/bin/pip install streamlit openai`
 
 ## Stack
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Python 3.13, Streamlit 1.58+, OpenAI Python SDK
+- Session state for freemium quota tracking (no database needed)
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
-
-## Architecture decisions
-
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- `app.py` — entire application (single-file Streamlit app)
+- `.streamlit/config.toml` — server config (port 5000, headless)
+- `.venv/` — Python virtual environment (gitignored)
+- `requirements.txt` — pinned Python dependencies
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+LawBuddy Portugal is a legal information assistant for Portugal, strictly scoped to Portuguese jurisdiction. Features:
+
+- **AI chat** — GPT-4o, system-prompted to only answer Portuguese law questions
+- **User profiles** — Tourist / Digital Nomad / Golden Visa / Long-term Expat
+- **Freemium model** — 2 chat tabs + 5 messages free; lockout with upgrade CTA
+- **Whop paywall** — $19/mo unlock via Whop checkout link
+- **Share-to-unlock** — WhatsApp share earns +3 bonus questions (with 4-digit code verification)
+- **Cooldown** — 30-second rate limit between messages for free users (anti-bot)
+- **Emergency sidebar** — 112, SNS 24, AIMA, PSP contacts
+- **GDPR** — "Clear All My Data" button wipes all session state
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- UI language: English
+- Payment: Whop ($19/mo) — update `WHOP_URL` in `app.py` with your real checkout link
+
+## Architecture decisions
+
+- Single `app.py` file as requested; all state in `st.session_state` (no DB)
+- Message quota increments only after a successful AI response (failed calls don't burn free quota)
+- WhatsApp URLs use `urllib.parse.quote()` so `#` in invite codes is properly encoded
+- XSRF protection left enabled (Streamlit default) for security
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- The `.venv` Python must be used explicitly (`.venv/bin/python3 -m streamlit`) — the venv shebang resolves to system Python which can't find the packages
+- Update `WHOP_URL` constant in `app.py` before going live
+- `OPENAI_API_KEY` must be set as a Replit Secret
