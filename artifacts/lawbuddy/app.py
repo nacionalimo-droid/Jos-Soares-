@@ -195,7 +195,7 @@ with st.sidebar:
 # ── MAIN CONTENT ──────────────────────────────────────────────────────────
 current_tab = get_current_tab()
 
-col1, col2 = st.columns([4, 1])
+col1, col2, col3 = st.columns([3, 1, 1])
 with col1:
     st.title("🇵🇹 LawBuddy Portugal")
     st.caption("**Your Legal Guide in Portugal** — AI-powered advice on Portuguese law & compliance")
@@ -204,6 +204,9 @@ with col2:
         st.success("✅ Premium")
     else:
         st.info("🆓 Free Plan")
+with col3:
+    if not st.session_state.is_premium:
+        st.link_button("⭐ LawBuddy Portugal Pro", PAYMENT_URL, use_container_width=True, type="primary")
 
 st.divider()
 
