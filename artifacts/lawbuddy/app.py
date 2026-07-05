@@ -130,12 +130,14 @@ def get_ai_response(messages, profile):
         for m in messages:
             groq_messages.append({"role": m["role"], "content": m["content"]})
 
-        response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+                response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
             messages=groq_messages,
             max_tokens=1024,
-        )
-        return response.choices[0].message.content
+                )
+            
+        return response.choices.message.content
+        
 
     except Exception as e:
         return f"⚠️ An error occurred while contacting the AI: {str(e)}\n\n*Note from LawBuddy Portugal: This consultation is for informational purposes only regarding Portuguese law and compliance. It does not substitute official legal counsel from a Portuguese lawyer.*"
