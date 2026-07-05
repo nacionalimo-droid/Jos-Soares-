@@ -1,9 +1,9 @@
 import streamlit as st
 
-# 1. Definição do tema escuro de fundo e título da página
-st.set_page_config(page_title="O Último Algoritmo", layout="centered")
+# 1. Definição do tema e título da página (Modo focado na leitura)
+st.set_page_config(page_title="O Último Algoritmo - Edição Ilustrada", layout="centered")
 
-# 2. Inicialização segura das variáveis de estado
+# 2. Inicialização segura das variáveis de estado do utilizador
 if "livro_aberto" not in st.session_state:
     st.session_state.livro_aberto = False
 if "pagina_atual" not in st.session_state:
@@ -11,7 +11,44 @@ if "pagina_atual" not in st.session_state:
 if "comprado" not in st.session_state:
     st.session_state.comprado = False
 
-# 3. Base de dados da história com ilustrações exclusivas em alta definição para cada página
+# --- CONFIGURAÇÃO DE ESTILO: PÁGINAS DE LIVRO VERDADEIRAS (CSS NATÍVO) ---
+st.markdown("""
+<style>
+    /* Ocultar menus da plataforma para uma experiência limpa */
+    #MainMenu, footer, header {visibility: hidden;}
+    .stApp { background-color: #0b0c10; }
+    
+    /* Design da Caixa que Emula a Folha Física de Papel Creme */
+    .paper-sheet {
+        background-color: #fdfaf2; /* Cor Marfim Confortável */
+        color: #1a1b20; /* Texto Escuro Nobre */
+        padding: 35px 25px;
+        border-radius: 4px 20px 20px 4px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.6), inset 25px 0 20px rgba(0,0,0,0.06);
+        border-left: 6px solid #2d2219; /* Lombada de couro do livro */
+        font-family: 'Georgia', serif;
+        margin-bottom: 20px;
+    }
+    
+    /* Formatação dos Textos do Livro */
+    .book-title { font-size: 26px; font-weight: bold; color: #6d28d9; margin-bottom: 15px; }
+    .book-body { font-size: 19px; line-height: 1.85; text-align: justify; }
+    .book-page-num { text-align: center; font-size: 13px; color: #7c7971; margin-top: 25px; border-top: 1px solid #e5e1d3; padding-top: 10px; }
+    
+    /* Estilo do Painel de Bloqueio Embutido */
+    .lock-box {
+        background-color: #11131a;
+        border: 2px solid #ef4444;
+        padding: 35px 20px;
+        border-radius: 12px;
+        text-align: center;
+        color: white;
+        margin-bottom: 20px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# 3. Base de dados da história com ilustrações conceituais de luxo (Arte Digital)
 paginas_livro = {
     1: {
         "titulo": "Capítulo I: O Padrão Invisível", 
@@ -40,33 +77,37 @@ paginas_livro = {
     }
 }
 
-# --- FLUXO 1: CAPA DO LIVRO ---
+# --- FLUXO 1: CAPA DO LIVRO (LIVRO FECHADO) ---
 if not st.session_state.livro_aberto:
     st.title("O ÚLTIMO ALGORITMO 👁️")
     st.subheader("A Mente Atrás da Máquina")
     
-    # Ilustração de Capa Estilo Premium Avançada
-    st.image("https://unsplash.com", use_container_width=True, caption="Edição Especial Digital")
+    # Ilustração de capa em alta definição com moldura elegante (Arte Abstrata Cyberpunk)
+    st.image("https://unsplash.com", use_container_width=True)
     
     st.write("*Um thriller psicológico sobre Inteligência Artificial, destino e controlo corporativo.*")
-    st.caption("Autor: Jos Soares")
+    st.caption("Autor: Jos Soares | Edição Ilustrada de Luxo")
     
-    if st.button("📖 ABRIR LIVRO E COMEÇAR LEITURA", use_container_width=True, type="primary"):
+    if st.button("📖 ABRIR LIVRO E VER ILUSTRAÇÕES", use_container_width=True, type="primary"):
         st.session_state.livro_aberto = True
         st.session_state.pagina_atual = 1
         st.rerun()
 
-# --- FLUXO 2: LIVRO ABERTO (Leitura das Páginas) ---
+# --- FLUXO 2: LIVRO ABERTO (LEITURA ATIVA) ---
 else:
     num_pag = st.session_state.pagina_atual
 
-    # Lógica de Paywall: Bloqueia após a página 5 se não tiver pago
+    # Bloqueio automático por Paywall na página 6
     if num_pag > 5 and not st.session_state.comprado:
-        st.error("🔒 CONTEÚDO BLOQUEADO")
-        st.subheader("Preço: 19,99€")
-        st.write("O tempo de Eva Duarte está a esgotar-se. Desbloqueie o acesso vitalício imediato para ler o resto desta história e descobrir como sabotar o algoritmo nas restantes 65 páginas.")
+        st.markdown("""
+        <div class="lock-box">
+            <h3 style="color:#ef4444; margin-top:0;">🔒 CAPÍTULO BLOQUEADO</h3>
+            <p style="color:#94a3b8; font-size:15px;">O tempo está a esgotar-se para Eva Duarte. Desbloqueie o acesso vitalício imediato para ler o resto desta história nas restantes 65 páginas.</p>
+            <h2 style="font-size:36px; color:white; margin:15px 0;">19,99€</h2>
+        </div>
+        """, unsafe_allow_html=True)
         
-        # REDIRECIONAMENTO COM STRIPE COMPACTADO E DIRETO
+        # O LINK REAL DO TEU STRIPE CORRIGIDO COM O "A" MAIÚSCULO DA IMAGEM
         st.link_button(
             "💳 COMPRAR LIVRO COMPLETO (19,99€)", 
             "https://stripe.com", 
@@ -75,60 +116,44 @@ else:
         )
         
         st.write("---")
-        st.caption("Nota de segurança: O pagamento é processado sob encriptação da rede Stripe.")
-        
         if st.button("⬅️ Voltar para a Página Anterior", use_container_width=True):
             st.session_state.pagina_atual = 5
             st.rerun()
 
-    # Leitura ativa das páginas com ilustrações dedicadas
+    # Páginas de Leitura Ativa com Estilo de Papel Real Nobre e Ilustrações de Luxo
     else:
-        st.divider()
-        
         if num_pag in paginas_livro:
-            st.header(paginas_livro[num_pag]["titulo"])
-            
-            # Ilustração Individual da Página Corrente
+            # Ilustração Conceitual HD carregada diretamente acima da folha
             st.image(paginas_livro[num_pag]["imagem"], use_container_width=True)
             
-            st.write(paginas_livro[num_pag]["texto"])
+            # Caixa HTML que simula a folha física texturada do livro
+            st.markdown(f"""
+            <div class="paper-sheet">
+                <div class="book-title">{paginas_livro[num_pag]["titulo"]}</div>
+                <div class="book-body">{paginas_livro[num_pag]["texto"].replace('\n\n', '<br><br>')}</div>
+                <div class="book-page-num">Página {num_pag} de 70</div>
+            </div>
+            """, unsafe_allow_html=True)
         else:
-            # Geração automática ilustrada da história pós-compra até à página 70
-            st.header(f"Capítulo {num_pag // 5 + 5}: A Fuga de Lisboa")
+            # Ilustração Genérica de Alta Fidelidade para as páginas PRO (6 a 70)
             st.image("https://unsplash.com", use_container_width=True)
-            st.write(f"Eva recolheu o seu portátil num movimento rápido, escapando pelas escadas de emergência enquanto os servidores do laboratório começavam a apagar os registos. Na página {num_pag}, ela sabia que cada passo seu estava a ser monitorizado pelo Chronos através das câmaras de vigilância da cidade. Sem olhar para trás, correu em direção à noite escura de Lisboa...")
+            st.markdown(f"""
+            <div class="paper-sheet">
+                <div class="book-title">Capítulo {num_pag // 5 + 5}: A Fuga de Lisboa</div>
+                <div class="book-body">Eva recolheu o seu portátil num movimento rápido, escapando pelas escadas de emergência enquanto os servidores do laboratório começavam a apagar os registos. Na página {num_pag}, ela sabia que cada passo seu estava a ser monitorizado pelo Chronos através das câmaras de vigilância da cidade. Sem olhar para trás, correu em direção à noite escura de Lisboa...</div>
+                <div class="book-page-num">Página {num_pag} de 70</div>
+            </div>
+            """, unsafe_allow_html=True)
 
-        st.caption(f"Página {num_pag} de 70")
-        st.divider()
-
+        # Botões de Navegação Confortáveis por baixo da folha
         col1, col2 = st.columns(2)
         with col1:
             if num_pag > 1:
-                if st.button("⬅️ Página Anterior", use_container_width=True):
+                if st.button("⬅️ Anterior", use_container_width=True):
                     st.session_state.pagina_atual -= 1
                     st.rerun()
             else:
                 if st.button("🚪 Fechar Livro", use_container_width=True):
                     st.session_state.livro_aberto = False
                     st.rerun()
-                    
-        with col2:
-            if num_pag < 70:
-                if st.button("Avançar Página ➡️", use_container_width=True):
-                    st.session_state.pagina_atual += 1
-                    st.rerun()
-
-# --- PAINEL DE TESTES NA SIDEBAR ---
-with st.sidebar:
-    st.title("⚙️ Painel de Controlo")
-    st.write("Simule a compra para abrir as 70 páginas de imediato:")
-    pro_simulado = st.checkbox("Simular Compra Concluída", value=st.session_state.comprado)
-    if pro_simulado != st.session_state.comprado:
-        st.session_state.comprado = pro_simulado
-        st.rerun()
-    if st.button("Reiniciar Livro"):
-        st.session_state.livro_aberto = False
-        st.session_state.pagina_atual = 1
-        st.session_state.comprado = False
-        st.rerun()
-                 
+    
