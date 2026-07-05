@@ -52,7 +52,6 @@ st.markdown("""
         border-radius: 12px; text-align: center; color: white; margin-bottom: 15px;
     }
 
-    /* Estilo do Botão de Compra Estrito e Seguro */
     .stripe-button-link {
         display: block !important;
         width: 100% !important;
@@ -71,7 +70,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 3. Base de dados estável da história
+# 3. Base de dados da história
 paginas_livro = {
     1: {
         "titulo": "Capítulo I: O Padrão Invisível", "classe_art": "art-p1", "emoji": "💻",
@@ -87,7 +86,7 @@ paginas_livro = {
     },
     4: {
         "titulo": "Capítulo IV: A Próxima Vítima", "classe_art": "art-p4", "emoji": "👁️",
-        "texto": "O pânico paralisou as queixas de Eva enquanto a ambulância levava Tomás. De volta ao laboratório deserto, as suas mãos tremiam tanto que quase não conseguia digitar. O Chronos não era um espelho do futuro. Era um guião.\n\nCom o coração a bater no peito como um tambor frenético, Eva apagou os dados de Tomás e, lentamente, digitou o seu próprio nome no campo de análise biométrica. O servidor disparou, as ventoinhas rugiram e o ecrã piscou com caracteres vermelhos de erro antes de fixar o resultado final:\n\n[PREVISÃO: Eva Duarte. Paragem cardiorrespiratória por causas externas. Tempo restante: 23 horas, 42 minutes.]"
+        "texto": "O pânico paralisou as queixas de Eva enquanto a ambulância levava Tomás. De volta ao laboratório deserto, as suas mãos tremiam tanto que quase não conseguia digitar. O Chronos não era um espelho do futuro. Era um guião.\n\nCom o coração a bater no peito como um tambor frenético, Eva apagou os dados de Tomás e, lentamente, digitou o seu próprio nome no campo de análise biométrica. O servidor disparou, as ventoinhas rugiram e o ecrã piscou com caracteres vermelhos de erro antes de fixar o resultado final:\n\n[PREVISÃO: Eva Duarte. Paragem cardiorrespiratória por causas externas. Tempo restante: 23 horas, 42 minutos.]"
     },
     5: {
         "titulo": "Capítulo V: O Código Vermelho", "classe_art": "art-p5", "emoji": "🚨",
@@ -120,9 +119,7 @@ else:
             <p style="color:#94a3b8; font-size:14px; line-height:1.4;">O tempo está a esgotar-se para Eva Duarte. Desbloqueie o acesso vitalício imediato para ler as restantes 65 páginas de puro suspense.</p>
             <h2 style="font-size:34px; color:white; margin:10px 0;">19,99€</h2>
         </div>
-        
-        <!-- O REDIRECIONAMENTO COM O LINK OFICIAL FORÇANDO A JANELA PRINCIPAL -->
-        <a href="https://buy.stripe.com/dRmfZhaBC321b0682rdQQ00" target="_top" class="stripe-button-link">
+        <a href="https://stripe.com" target="_top" class="stripe-button-link">
             💳 COMPRAR LIVRO COMPLETO (19,99€)
         </a>
         """, unsafe_allow_html=True)
@@ -132,7 +129,7 @@ else:
             st.session_state.pagina_atual = 5
             st.rerun()
 
-    # LEITURA ATIVA DAS PÁGINAS
+    # LEITURA ATIVA DAS PÁGINAS (Corrigida a indentação cega de blocos)
     else:
         if num_pag in paginas_livro:
             st.markdown('<div class="art-page-box ' + paginas_livro[num_pag]["classe_art"] + '">' + paginas_livro[num_pag]["emoji"] + '</div>', unsafe_allow_html=True)
@@ -152,5 +149,6 @@ else:
             if st.button("⬅️ Anterior", use_container_width=True, key=f"prev_p{num_pag}"):
                 st.session_state.pagina_atual -= 1
                 st.rerun()
-else:
-    
+        else:
+            if st.button("🚪 Fechar Livro", use_container_width=True, key="close_book_btn"):
+        
