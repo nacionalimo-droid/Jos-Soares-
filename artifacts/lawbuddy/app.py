@@ -11,6 +11,24 @@ if "pagina_atual" not in st.session_state:
 if "comprado" not in st.session_state:
     st.session_state.comprado = False
 
+# --- FUNÇÕES DE CALLBACK (Garante que o telemóvel muda a página sem falhar) ---
+def abrir_livro():
+    st.session_state.livro_aberto = True
+    st.session_state.pagina_atual = 1
+
+def fechar_livro():
+    st.session_state.livro_aberto = False
+    st.session_state.pagina_atual = 1
+
+def proxima_pagina():
+    st.session_state.pagina_atual += 1
+
+def pagina_anterior():
+    st.session_state.pagina_atual -= 1
+
+def voltar_ao_paywall():
+    st.session_state.pagina_atual = 5
+
 # --- CONFIGURAÇÃO DE ESTILO: ILUSTRAÇÕES CSS E PÁGINAS DE LUXO ---
 st.markdown("""
 <style>
@@ -80,7 +98,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 3. Base de dados da história
+# 4. Base de dados da história
 paginas_livro = {
     1: {
         "titulo": "Capítulo I: O Padrão Invisível", 
@@ -114,21 +132,19 @@ if not st.session_state.livro_aberto:
     st.title("O ÚLTIMO ALGORITMO")
     st.subheader("A Mente Atrás da Máquina")
     
-    # Capa com Arte Digital nativa em CSS
     st.markdown('<div class="art-cover-box"><div class="art-cover-circle"></div></div>', unsafe_allow_html=True)
     
     st.write("*Um thriller psicológico sobre Inteligência Artificial, destino e controlo corporativo.*")
     st.caption("Autor: Jos Soares | Edição Especial Ilustrada")
     
-    if st.button("📖 ABRIR LIVRO E COMEÇAR LEITURA", use_container_width=True, type="primary"):
-        st.session_state.livro_aberto = True
-        st.session_state.pagina_atual = 1
+    # Botão com ligação direta via Callback para abrir
+    st.button("📖 ABRIR LIVRO E COMEÇAR LEITURA", use_container_width=True, type="primary", on_click=abrir_livro)
 
 # --- FLUXO 2: LIVRO ABERTO (LEITURA ATIVA) ---
 else:
     num_pag = st.session_state.pagina_atual
 
-    # Bloqueio automático por Paywall na página 6 (Passadas as 5 páginas gratuitas)
+    # Bloqueio automático por Paywall na página 6 (Passadas as 5 gratuitas)
     if num_pag > 5 and not st.session_state.comprado:
         st.markdown("""
         <div class="lock-box">
@@ -138,7 +154,7 @@ else:
         </div>
         """, unsafe_allow_html=True)
         
-        # LINK DO STRIPE CORRIGIDO COM O "A" MAIÚSCULO
+        # Link do teu produto Stripe de 19,99€ (Abre em nova aba)
         st.link_button(
             "💳 COMPRAR LIVRO COMPLETO (19,99€)", 
             "https://stripe.com", 
@@ -147,18 +163,15 @@ else:
         )
         
         st.write("---")
-        if st.button("⬅️ Voltar para a Página Anterior", use_container_width=True):
-            st.session_state.pagina_atual = 5
+        # Botão de retorno seguro
+        st.button("⬅️ Voltar para a Página Anterior", use_container_width=True, on_click=voltar_ao_paywall)
 
-    # Páginas de Leitura Ativa Seguras para Telemóvel
+    # Páginas de Leitura Ativa Livres de Loops
     else:
         if num_pag in paginas_livro:
-            # Ilustração em CSS e Emoji
             st.markdown('<div class="art-page-box ' + paginas_livro[num_pag]["classe_art"] + '">' + paginas_livro[num_pag]["emoji"] + '</div>', unsafe_allow_html=True)
-            
-            # Corpo do livro em papel creme
             st.markdown('<div class="paper-sheet"><div class="book-title">' + paginas_livro[num_pag]["titulo"] + '</div><div class="book-body">' + paginas_livro[num_pag]["texto"].replace('\n\n', '<br><br>') + '</div><div class="book-page-num">Página ' + str(num_pag) + ' de 70</div></div>', unsafe_allow_html=True)
         else:
-            # Páginas PRO estendidas
+            # Conteúdo estendido para quem comprou o livro
             st.markdown('<div class="art-page-box art-p5">🌌</div>', unsafe_allow_html=True)
     
