@@ -87,7 +87,6 @@ if not st.session_state.livro_aberto:
     st.write("*Um thriller psicológico sobre Inteligência Artificial, destino e controlo corporativo.*")
     st.caption("Autor: Jos Soares | Edição Especial Ilustrada")
     
-    # Execução mecânica direta
     if st.button("📖 ABRIR LIVRO E COMEÇAR LEITURA", use_container_width=True, type="primary"):
         st.session_state.livro_aberto = True
         st.session_state.pagina_atual = 1
@@ -96,7 +95,7 @@ if not st.session_state.livro_aberto:
 else:
     num_pag = st.session_state.pagina_atual
 
-    # BLOQUEIO DO PAYWALL SE PASSAR DA PÁGINA 5 (Sem travar a navegação)
+    # BLOQUEIO DO PAYWALL SE PASSAR DA PÁGINA 5
     if num_pag > 5 and not st.session_state.comprado:
         st.markdown("""
         <div class="lock-box">
@@ -114,12 +113,11 @@ else:
         )
         
         st.write("---")
-        # Botão direto mecânico para recuar do paywall
         if st.button("⬅️ Voltar para a Página 5", use_container_width=True, key="back_paywall"):
             st.session_state.pagina_atual = 5
             st.rerun()
 
-    # LEITURA ATIVA DAS PÁGINAS (Com chaves dinâmicas que destravam os botões)
+    # LEITURA ATIVA DAS PÁGINAS
     else:
         if num_pag in paginas_livro:
             st.markdown('<div class="art-page-box ' + paginas_livro[num_pag]["classe_art"] + '">' + paginas_livro[num_pag]["emoji"] + '</div>', unsafe_allow_html=True)
@@ -128,16 +126,16 @@ else:
             st.markdown('<div class="art-page-box art-p5">🌌</div>', unsafe_allow_html=True)
             st.markdown('<div class="paper-sheet"><div class="book-title">Capítulo ' + str(num_pag // 5 + 5) + ': A Fuga de Lisboa</div><div class="book-body">Eva recolheu o seu portátil num movimento rápido, escapando pelas escadas de emergência...</div><div class="book-page-num">Página ' + str(num_pag) + ' de 70</div></div>', unsafe_allow_html=True)
 
-        st.write("") # Espaçador
+        st.write("") 
 
-        # BOTÕES MECÂNICOS SEQUENCIAIS SEGUROS (Chaves únicas por página forçam a mudança)
+        # BOTÕES MECÂNICOS SEQUENCIAIS SEGUROS
         if num_pag < 70:
-            if st.button("Avançar Página ➡️", use_container_width=True, type="primary", key=f"next_btn_p{num_pag}"):
+            if st.button("Avançar Página ➡️", use_container_width=True, type="primary", key=f"next_p{num_pag}"):
                 st.session_state.pagina_atual += 1
                 st.rerun()
                 
         if num_pag > 1:
-            if st.button("⬅️ Anterior", use_container_width=True, key=f"prev_btn_p{num_pag}"):
+            if st.button("⬅️ Anterior", use_container_width=True, key=f"prev_p{num_pag}"):
                 st.session_state.pagina_atual -= 1
                 st.rerun()
         else:
@@ -145,8 +143,14 @@ else:
                 st.session_state.livro_aberto = False
                 st.rerun()
 
-# BARRA LATERAL DE SEGURANÇA
+# BARRA LATERAL CORRIGIDA (Indentação limpa e sem erros)
 with st.sidebar:
     st.title("⚙️ Painel de Testes")
     pro_simulado = st.checkbox("Simular Compra Concluída", value=st.session_state.comprado)
     if pro_simulado != st.session_state.comprado:
+        st.session_state.comprado = pro_simulado
+        st.rerun()
+    if st.button("Reiniciar Aplicação"):
+        st.session_state.livro_aberto = False
+        st.session_state.pagina_atual = 1
+    
