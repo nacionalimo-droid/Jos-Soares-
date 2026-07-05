@@ -1,196 +1,174 @@
 import streamlit as st
-import json
 import time
 
-# Configuração da página do Streamlit
+# Configuração visual e responsiva para telemóveis
 st.set_page_config(
-    page_title="RealtyBuddy - O Teu Mentor AI",
-    page_icon="🏢",
-    layout="wide"
+    page_title="StoryVerse Pro — O Teu Destino",
+    page_icon="🔮",
+    layout="centered"
 )
 
-# LINK REAL DE PAGAMENTO (STRIPE CHECKOUT)
-STRIPE_PAYMENT_URL = "https://stripe.com" 
+# LINK DO TEU STRIPE CHECKOUT VITALÍCIO (19.99€)
+STRIPE_PAYMENT_URL = "https://stripe.com"
 
-# Configuração Segura da API da Google Gemini (Chave guardada nos Secrets do Streamlit)
-# Para testares localmente sem secrets, podes substituir por: genai.configure(api_key="A_TUA_CHAVE_AQUI")
-import google.generativeai as genai
-try:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-except Exception:
-    # Fallback caso ainda não tenhas configurado a chave nos Secrets do Streamlit
-    st.warning("⚠️ Chave API do Gemini não detetada nos Secrets. O Mentor vai correr em modo de simulação até a configurares.")
-
-# --- ESTADO GLOBAL DA APLICAÇÃO (MEMÓRIA DO CRM) ---
+# ==============================================================================
+# 💾 SISTEMA DE MEMÓRIA PERSISTENTE E INVENTÁRIO (SESSÃO DE JOGO)
+# ==============================================================================
 if "user_status" not in st.session_state:
-    st.session_state.user_status = "Free"
-if "ai_messages_left" not in st.session_state:
-    st.session_state.ai_messages_left = 3
-if "pagina_atual" not in st.session_state:
-    st.session_state.pagina_atual = "Home"
-if "leads" not in st.session_state:
-    st.session_state.leads = []
-if "resposta_ai_real" not in st.session_state:
-    st.session_state.resposta_ai_real = None
+    st.session_state.user_status = "Free"  # "Free" ou "Pro"
+if "genero" not in st.session_state:
+    st.session_state.genero = None         # "Homem" ou "Mulher"
+if "no_atual" not in st.session_state:
+    st.session_state.no_atual = "capitulo_1"
+if "mochila" not in st.session_state:
+    st.session_state.mochila = []          # Inventário de itens capturados nas rotas
 
-# --- BARRA LATERAL: MENU E CONTROLO ---
+# --- BARRA LATERAL ESTILIZADA ---
 with st.sidebar:
-    st.title("🏢 RealtyBuddy")
-    st.caption("Mentor AI & CRM Real")
+    st.markdown("## 🔮 StoryVerse Pro")
+    st.caption("Versão 2026 • Entretenimento Vitalício")
     st.divider()
     
-    if st.button("🏠 Voltar ao Menu Principal", use_container_width=True):
-        st.session_state.pagina_atual = "Home"
+    # Exibição visual da Mochila / Inventário do Jogador
+    st.markdown("### 🎒 O Teu Inventário")
+    if not st.session_state.mochila:
+        st.caption("A tua mochila está vazia.")
+    else:
+        for item in st.session_state.mochila:
+            st.markdown(f"• 📦 **{item}**")
+            
+    st.divider()
+    if st.button("🔄 Reiniciar e Apagar Progresso", use_container_width=True):
+        st.session_state.no_atual = "capitulo_1"
+        st.session_state.genero = None
+        st.session_state.mochila = []
         st.rerun()
         
     st.divider()
-    st.subheader("🛡️ Proteção Anti-Batota")
+    st.markdown("### 💳 Estado da Obra")
     if st.session_state.user_status == "Free":
-        st.error("Plano Grátis Limitado")
-        st.write(f"Créditos de IA restantes: **{st.session_state.ai_messages_left}**")
-        st.markdown(
-            f'<a href="{STRIPE_PAYMENT_URL}" target="_blank" style="text-decoration: none;">'
-            '<div style="background-color: #ff4b4b; color: white; text-align: center; '
-            'padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer;">'
-            '🚀 ADQUIRIR PRO VITALÍCIO (19.99€)'
-            '</div></a>', 
-            unsafe_allow_html=True
-        )
-        if st.button("Simular Ativação PRO"):
+        st.error("Demonstração Gratuita Ativa")
+        if st.button("🔓 Forçar Desbloqueio PRO (Teste)"):
             st.session_state.user_status = "Pro"
             st.rerun()
     else:
-        st.success("⭐ Membro PRO Vitalício")
+        st.success("⭐ Licença Vitalícia Ativada")
 
-# --- NAVEGAÇÃO ---
+# ==============================================================================
+# 📚 A BASE DE DADOS DA NARRATIVA MASSIVA (RAMIFICAÇÕES COMPLEXAS)
+# ==============================================================================
+HISTORIA = {
+    "capitulo_1": {
+        "titulo": "Capítulo 1: O Sussurro do Neo-Porto",
+        "imagem": "https://unsplash.com",
+        "texto": """A névoa elétrica sobre Neo-Porto nunca dissipa. Sob o brilho dos painéis de néon degradados, tu caminhas com as mãos cravadas nos bolsos do teu sobretudo. O ar cheira a ozono e a metal queimado. 
 
-if st.session_state.pagina_atual == "Home":
-    st.title("👋 Olá, Consultor! Bem-vindo ao RealtyBuddy")
-    st.write("O teu mentor imobiliário está pronto. Escolhe onde queres entrar:")
+De repente, o teu terminal holográfico de pulso vibra violentamente. Uma frequência encriptada que não deverias conseguir receber projeta um endereço nas tuas retinas: *Armazém 4, Doca Velha*. Uma voz distorcida ecoa pelo recetor de áudio: 'Eles sabem o que escondes. Se queres sobreviver à noite, mexe-te.'
+
+A tua mente viaja instantaneamente para os segredos do teu passado. Cada decisão a partir de agora ditará se vês o amanhecer nesta cidade cruel.""",
+        "opcoes": [
+            {"texto": "🚨 [Ação] Correr em direção à Doca Velha imediatamente.", "proximo_no": "doca_velha", "item_ganho": None},
+            {"texto": "🕵️‍♂️ [Prudência] Investigar a origem do sinal e roubar o chip de dados do beco.", "proximo_no": "investigar_sinal", "item_ganho": "Chip de Dados Encriptado"},
+            {"texto": "👥 [Contactos] Ligar para um aliado do submundo e armar-te.", "proximo_no": "chamar_aliado", "item_ganho": "Pistola Laser Compacta"}
+        ]
+    },
     
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("⏰ O Meu Dia (Falar com Mentor)", use_container_width=True):
-            st.session_state.pagina_atual = "O Meu Dia"
+    "doca_velha": {
+        "titulo": "Capítulo 1: A Rota de Colisão",
+        "imagem": "https://unsplash.com",
+        "texto": """A adrenalina dispara. Os teus passos ecoam no chão molhado enquanto corres pelas ruelas industriais. Ao aproximares-te do Armazém 4, notas três silhuetas estáticas nas sombras, vigiando a entrada principal com armas táticas de curto alcance. 
+
+Entrar pela frente é suicídio, mas a voz no terminal disse que estavas a ficar sem tempo. O teu instinto avisa-te de que este é o ponto de não retorno.""",
+        "opcoes": [
+            {"texto": "🎯 Procurar uma entrada secundária pelas condutas de ventilação.", "proximo_no": "bloqueio_paywall", "item_ganho": None},
+            {"texto": "💥 Avançar diretamente e tentar neutralizar os guardas.", "proximo_no": "bloqueio_paywall", "item_ganho": None}
+        ]
+    },
+
+    "investigar_sinal": {
+        "titulo": "Capítulo 1: Linhas de Código",
+        "imagem": "https://unsplash.com",
+        "texto": """Recusas-te a ser uma marioneta. Encostas-te à parede escura do beco e abres a consola de depuração do teu terminal. Os teus dedos voam sobre o teclado virtual, intercetando os pacotes de dados da chamada. 
+
+Consegues extrair um dispositivo físico escondido na caixa de fusíveis do beco. Tens agora um Chip de Dados Encriptado na tua mochila! O rastreio aponta para uma localização impossível: os servidores centrais da Corporação Apex. Alguém de muito alto cargo está a jogar contigo.""",
+        "opcoes": [
+            {"texto": "💻 Tentar quebrar a encriptação do chip aqui mesmo.", "proximo_no": "bloqueio_paywall", "item_ganho": None},
+            {"texto": "🏃‍♂️ Guardar o segredo e fugir a pé da cidade antes que te localizem.", "proximo_no": "bloqueio_paywall", "item_ganho": None}
+        ]
+    },
+
+    "chamar_aliado": {
+        "titulo": "Capítulo 1: Dívidas de Sangue",
+        "imagem": "https://unsplash.com",
+        "texto": """Inicias uma chamada de alta segurança para Vance, um ex-mercenário que te deve a vida. Ele atende do interior de um jipe blindado e lança-te um objeto pesado antes de arrancar: uma Pistola Laser Compacta.
+
+'Estás louco por andar na rua desarmado?', rosna Vance. 'A cidade está bloqueada. Há caçadores de prémios com a tua fotografia em todos os distritos. Vai para o armazém, mas não confies em ninguém.'""",
+        "opcoes": [
+            {"texto": "🤝 Entrar no armazém de arma em punho, pronto para disparar.", "proximo_no": "bloqueio_paywall", "item_ganho": None},
+            {"texto": "🤫 Ocultar a pistola no sobretudo e entrar fingindo rendição.", "proximo_no": "bloqueio_paywall", "item_ganho": None}
+        ]
+    }
+}
+
+# ==============================================================================
+# 🎮 RENDEREZAR O JOGO INTERATIVO
+# ==============================================================================
+
+# Passo 1: Criação da Personagem
+if st.session_state.genero is None:
+    st.title("✨ Escolha do Protagonista")
+    st.write("Configura o perfil da tua personagem para alinhar os diálogos e pronomes da história:")
+    
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("🙋‍♂️ Protagonista Masculino", use_container_width=True):
+            st.session_state.genero = "Homem"
             st.rerun()
-    with col2:
-        if st.button(f"👥 Pasta de Leads & Clientes ({len(st.session_state.leads)})", use_container_width=True):
-            st.session_state.pagina_atual = "Leads & Clientes"
+    with c2:
+        if st.button("🙋‍♀️ Protagonista Feminina", use_container_width=True):
+            st.session_state.genero = "Mulher"
             st.rerun()
 
-elif st.session_state.pagina_atual == "O Meu Dia":
-    st.title("⏰ O Meu Dia — Análise do Mentor AI")
-    st.write("Despeja tudo o que tens para fazer. O Mentor vai analisar o teu texto através de Inteligência Artificial real e organizar o teu dia.")
+# Passo 2: O Fluxo Dinâmico
+else:
+    no = st.session_state.no_atual
     
-    entrada_texto = st.text_area(
-        "O que tens planeado?",
-        height=150,
-        placeholder="Escreve aqui o teu plano..."
-    )
-    
-    if st.button("⚡ Analisar Contexto com AI Real"):
-        if st.session_state.user_status == "Free" and st.session_state.ai_messages_left <= 0:
-            st.error("❌ Créditos esgotados. Faz o upgrade para PRO para continuares.")
-        elif entrada_texto:
-            if st.session_state.user_status == "Free":
-                st.session_state.ai_messages_left -= 1
-                
-            with st.spinner("O Mentor AI Real está a estudar a tua mensagem..."):
-                try:
-                    # Engenharia de Prompt para forçar o Gemini a responder em formato estruturado (JSON)
-                    prompt = f"""
-                    Atua como um mentor de elite para consultores imobiliários. 
-                    Analisa o seguinte plano enviado pelo consultor e extrai conselhos práticos, tarefas e dados de CRM.
-                    Texto do consultor: "{entrada_texto}"
-                    
-                    Responde EXCLUSIVAMENTE num formato JSON válido com esta estrutura exata (não adiciones nenhum texto fora do JSON):
-                    {{
-                        "conselhos": ["lista de 2 ou 3 conselhos de imobiliária e postura específicos para o que ele descreveu"],
-                        "checklist": ["tarefas lógicas que ele tem de fazer com base nas horas e eventos ditados"],
-                        "alarme_hora": "hora sugerida para o alarme acordar o utilizador ex: 08:00",
-                        "gps_local": "nome do local para o GPS se houver, ou string vazia",
-                        "pergunta_crm": "uma pergunta inteligente sobre os clientes mencionados para guardar no CRM",
-                        "sugestao_lead": "nome sugerido para criar uma lead se aplicável"
-                    }}
-                    """
-                    
-                    model = genai.Model(model_name="gemini-1.5-flash")
-                    response = model.generate_content(prompt)
-                    
-                    # Limpa e processa o JSON devolvido pela IA
-                    texto_resposta = response.text.strip().replace("```json", "").replace("```", "")
-                    st.session_state.resposta_ai_real = json.loads(texto_resposta)
-                
-                except Exception as e:
-                    # Fallback de segurança caso a API falhe ou não esteja configurada
-                    st.session_state.resposta_ai_real = {
-                        "conselhos": [
-                            "💼 **Preparação Profissional:** Organiza os teus argumentos comerciais antes de falar com qualquer contacto de negócios.",
-                            "⏰ **Gestão de Horários:** Garante que defines alarmes com margem suficiente para não chegares atrasado às visitas de manhã."
-                        ],
-                        "checklist": [
-                            "Confirmar a agenda exata dos compromissos",
-                            "Validar a documentação necessária para o cliente"
-                        ],
-                        "alarme_hora": "08:00",
-                        "gps_local": "Localização do Imóvel",
-                        "pergunta_crm": "O cliente mencionado para amanhã de manhã é um contacto novo (Lead) ou já registado?",
-                        "sugestao_lead": "Cliente de Manhã"
-                    }
-                st.rerun()
-
-    # --- INTERFACE VISUAL GERADA PELA IA REAL ---
-    if st.session_state.resposta_ai_real:
-        st.divider()
-        st.header("🧠 Conselhos Personalizados do Teu Mentor AI")
+    # CONTROLO DE ACESSO: MURO DE PAGAMENTO (PAYWALL)
+    if no == "bloqueio_paywall" and st.session_state.user_status == "Free":
+        st.title("🔒 Destino Interrompido...")
+        st.image("https://unsplash.com", use_container_width=True)
+        st.warning("O Capítulo 1 Gratuito terminou! As tuas escolhas e o teu inventário foram salvos com sucesso.")
         
-        for conselho in st.session_state.resposta_ai_real["conselhos"]:
-            st.write(conselho)
-            
-        st.subheader("📋 Checklist Gerada pela IA")
-        for item in st.session_state.resposta_ai_real["checklist"]:
-            st.checkbox(item, value=False)
-            
-        st.subheader("🚗 Automações de Tempo")
-        st.info(f"⏰ Alarme sugerido ajustado automaticamente para as **{st.session_state.resposta_ai_real['alarme_hora']}** devido aos teus compromissos.")
+        st.write(
+            "Entraste profundamente na conspiração de Neo-Porto. O rumo que escolheste gerou uma linha "
+            "temporal única baseada nas tuas decisões. Para continuares esta jornada massiva que dura vários dias, "
+            "desbloqueares os restantes capítulos e descobrires as dezenas de finais alternativos, adquire a tua licença vitalícia."
+        )
         
-        if st.session_state.resposta_ai_real["gps_local"]:
-            gps_url = f"https://google.com{st.session_state.resposta_ai_real['gps_local'].replace(' ', '+')}"
-            st.markdown(
-                f'<a href="{gps_url}" target="_blank">'
-                f'<button style="padding:10px; background-color:#1E88E5; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">'
-                f'🗺️ Ligar GPS para {st.session_state.resposta_ai_real["gps_local"]}'
-                '</button></a>', unsafe_allow_html=True
-            )
-            
-        # O INTERATIVO REAL: Pergunta dinâmica para preencher o CRM
-        if st.session_state.resposta_ai_real["pergunta_crm"]:
-            st.divider()
-            st.subheader("🤖 Interação com o CRM")
-            st.info(st.session_state.resposta_ai_real["pergunta_crm"])
-            
-            tipo_selecionado = st.radio("Escolha a opção para a base de dados:", ["É uma Nova Lead (Guardar na pasta)", "Já é Cliente Registado"])
-            
-            if st.button("Confirmar e Injetar na Pasta"):
-                if tipo_selecionado == "É uma Nova Lead (Guardar na pasta)":
-                    st.session_state.leads.append({
-                        "nome": st.session_state.resposta_ai_real["sugestao_lead"],
-                        "tipo": "Lead Capturada por AI",
-                        "data": time.strftime("%Y-%m-%d")
-                    })
-                    st.success("📥 Sucesso! O Mentor extraiu o cliente do teu texto e guardou-o na pasta de Leads.")
-                else:
-                    st.success("✅ Histórico de interações atualizado!")
-                st.session_state.resposta_ai_real["pergunta_crm"] = None
-                st.rerun()
-
-elif st.session_state.pagina_atual == "Leads & Clientes":
-    st.title("👥 Pasta de Leads & Clientes")
-    if not st.session_state.leads:
-        st.info("A pasta está vazia. Fala com o Mentor em texto livre para ele criar leads automaticamente.")
+        # Botão Oficial de Vendas do Stripe Checkout de 19.99€
+        st.markdown(
+            f'<a href="{STRIPE_PAYMENT_URL}" target="_blank" style="text-decoration: none;">'
+            '<div style="background-color: #ff4b4b; color: white; text-align: center; '
+            'padding: 16px; border-radius: 8px; font-weight: bold; font-size: 18px; cursor: pointer; '
+            'box-shadow: 0px 4px 15px rgba(255, 75, 75, 0.4); margin-top: 15px;">'
+            '🚀 COMPRAR ACESSO COMPLETO PARA SEMPRE (19.99€)'
+            '</div></a>', 
+            unsafe_allow_html=True
+        )
+        st.caption("Pagamento único. O livro digital é teu para sempre, sem mensalidades.")
+        
     else:
-        for lead in st.session_state.leads:
-            with st.expander(f"👤 {lead['nome']}"):
-                st.write(f"📂 **Origem:** {lead['tipo']}")
-                st.write(f"📅 **Data de Registo:** {lead['data']}")
+        # Se for Pro e bater no paywall, a história continua para o Capítulo 2 Real
+        if no == "bloqueio_paywall" and st.session_state.user_status == "Pro":
+            st.title("🚀 Capítulo 2: A Teia de Neo-Porto")
+            st.image("https://unsplash.com", use_container_width=True)
+            st.write("Conseguiste entrar no Armazém 4. A tua licença ProVitalícia está ativa!")
             
+            # EXEMPLO DA COMPLEXIDADE: O jogo reage de acordo com o inventário do Capítulo 1!
+            if "Pistola Laser Compacta" in st.session_state.mochila:
+                st.info("⚔️ **Ramificação de Combate Ativa:** Sentes o peso da Pistola Laser no teu sobretudo. Estás pronto para o pior.")
+                if st.button("Disparar contra as luzes do armazém para criar pânico", use_container_width=True):
+                    st.write("A história continuaria por aqui...")
+            elif "Chip de Dados Encriptado" in st.session_state.mochila:
+                st.info("💻 **Ramificação de Espionagem Ativa:** Tens o Chip da Corporação Apex. Se encontrares um terminal, podes expor os segredos deles.")
+    
