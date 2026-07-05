@@ -123,13 +123,12 @@ if not st.session_state.livro_aberto:
     if st.button("📖 ABRIR LIVRO E COMEÇAR LEITURA", use_container_width=True, type="primary"):
         st.session_state.livro_aberto = True
         st.session_state.pagina_atual = 1
-        st.rerun()
 
 # --- FLUXO 2: LIVRO ABERTO (LEITURA ATIVA) ---
 else:
     num_pag = st.session_state.pagina_atual
 
-    # Bloqueio automático por Paywall na página 6
+    # Bloqueio automático por Paywall na página 6 (Passadas as 5 páginas gratuitas)
     if num_pag > 5 and not st.session_state.comprado:
         st.markdown("""
         <div class="lock-box">
@@ -139,7 +138,7 @@ else:
         </div>
         """, unsafe_allow_html=True)
         
-        # O LINK REAL DO TEU STRIPE CORRIGIDO COM O "A" MAIÚSCULO
+        # LINK DO STRIPE CORRIGIDO COM O "A" MAIÚSCULO
         st.link_button(
             "💳 COMPRAR LIVRO COMPLETO (19,99€)", 
             "https://stripe.com", 
@@ -150,7 +149,6 @@ else:
         st.write("---")
         if st.button("⬅️ Voltar para a Página Anterior", use_container_width=True):
             st.session_state.pagina_atual = 5
-            st.rerun()
 
     # Páginas de Leitura Ativa Seguras para Telemóvel
     else:
@@ -161,6 +159,6 @@ else:
             # Corpo do livro em papel creme
             st.markdown('<div class="paper-sheet"><div class="book-title">' + paginas_livro[num_pag]["titulo"] + '</div><div class="book-body">' + paginas_livro[num_pag]["texto"].replace('\n\n', '<br><br>') + '</div><div class="book-page-num">Página ' + str(num_pag) + ' de 70</div></div>', unsafe_allow_html=True)
         else:
-            # Páginas PRO estendidas (Geração da história dinâmica até à página 70)
+            # Páginas PRO estendidas
             st.markdown('<div class="art-page-box art-p5">🌌</div>', unsafe_allow_html=True)
-                 
+    
