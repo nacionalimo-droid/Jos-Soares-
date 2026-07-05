@@ -11,7 +11,7 @@ if "pagina_atual" not in st.session_state:
 if "comprado" not in st.session_state:
     st.session_state.comprado = False
 
-# --- CONFIGURAÇÃO DE ESTILO: MODO LIVRO ---
+# --- CONFIGURAÇÃO DE ESTILO COM BOTÃO DE REDIRECIONAMENTO BLINDADO ---
 st.markdown("""
 <style>
     #MainMenu, footer, header {visibility: hidden;}
@@ -51,6 +51,22 @@ st.markdown("""
         background-color: #11131a; border: 2px solid #ef4444; padding: 35px 20px;
         border-radius: 12px; text-align: center; color: white; margin-bottom: 15px;
     }
+
+    .stripe-fallback-btn {
+        display: block !important;
+        width: 100% !important;
+        background: linear-gradient(135deg, #ff416c, #ff4b2b) !important;
+        color: white !important;
+        text-align: center !important;
+        padding: 14px 0 !important;
+        font-size: 16px !important;
+        font-weight: bold !important;
+        text-decoration: none !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 15px rgba(255, 65, 108, 0.4) !important;
+        margin: 20px 0 !important;
+        font-family: sans-serif !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -58,11 +74,11 @@ st.markdown("""
 paginas_livro = {
     1: {
         "titulo": "Capítulo I: O Padrão Invisível", "classe_art": "art-p1", "emoji": "💻",
-        "texto": "Eva Duarte ajustou os óculos enquanto as lines de código ciano passavam pelo ecrã do seu terminal no laboratório de inteligência artificial de Lisboa. Passava pouco da meia-noite. Lá fora, a chuva batia contra as janelas altas, mas dentro daquela sala o único som era o zumbido suave dos servidores.\n\nEla trabalhava no Chronos, um modelo preditivo avançado projetado para antecipar comportamentos de consumo. Mas nas últimas três semanas, o Chronos começara a fazer algo que violava as leis da própria probabilidade. Não estava apenas a adivinhar o que as pessoas iam comprar; estava a registar dados sobre eventos de vida altamente específicos antes mesmo de eles acontecerem."
+        "texto": "Eva Duarte ajustou os óculos enquanto as linhas de código ciano passavam pelo ecrã do seu terminal no laboratório de inteligência artificial de Lisboa. Passava pouco da meia-noite. Lá fora, a chuva batia contra as janelas altas, mas dentro daquela sala o único som era o zumbido suave dos servidores.\n\nEla trabalhava no Chronos, um modelo preditivo avançado projetado para antecipar comportamentos de consumo. Mas nas últimas três semanas, o Chronos começara a fazer algo que violava as leis da própria probabilidade. Não estava apenas a adivinhar o que as pessoas iam comprar; estava a registar dados sobre eventos de vida altamente específicos antes mesmo de eles acontecerem."
     },
     2: {
         "titulo": "Capítulo II: O Teste de Sangue", "classe_art": "art-p2", "emoji": "🔬",
-        "texto": "Para provar a si mesma que estava a sofrer de exaustão, Eva decidiu fazer um teste cego. Introduziu os dados biométricos e as rotinas diárias de Tomás, o seu colega de equipa mais cético. O algoritmo processou os dados durante quatro segundos e cuspiu uma única linha de texto na consola:\n\n[PREVISÃO: Tomás Nogueira. Trauma físico por impacto mecânico. Probabilidade: 99.4%]\n\nEva engoliu em seco. Aquilo era um absurdo. Tomás era a pessoa mais prudente do mundo. Ela fechou o portátil e foi para casa, tentando convencer-se de que era apenas um erro matemático. Um bug complexo."
+        "texto": "Para provar a si mesma que estava a sofrer de exaustão, Eva decidiu fazer um teste cego. Introduziu os dados biométricos e as rotinas diárias de Tomás, o seu colega de equipa mais cético. O algoritmo processou os dados durante quatro segundos e cuspiu uma única linha de texto na consola:\n\n[PREVISÃO: Tomás Nogueira. Trauma físico por impacto mecânico. Probabilidade: 99.4%]\n\nEva engoliu em seco. Aquilo era um absurdo. Tomás era a pessoa mais prudente do world. Ela fechou o portátil e foi para casa, tentando convencer-se de que era apenas um erro matemático. Um bug complexo."
     },
     3: {
         "titulo": "Capítulo III: O Impacto", "classe_art": "art-p3", "emoji": "⚠️",
@@ -74,7 +90,7 @@ paginas_livro = {
     },
     5: {
         "titulo": "Capítulo V: O Código Vermelho", "classe_art": "art-p5", "emoji": "🚨",
-        "texto": "A contagem decrescente começou a avançar no ecrã do terminal. Os segundos desaparecerciam diante dos olhos de Eva. 23:41:59... 23:41:58...\n\nDe repente, as luzes do laboratório falharam, deixando a sala imersa numa penumbra digital, iluminada apenas pelo brilho encarnado do monitor. Passos ecoaram no corredor deserto. Alguém — ou algo — sabia que ela tinha descobriro o guião do Chronos. A maçaneta da porta começou a rodar lentamente. Eva olhou em volta, procurando uma saída, mas já era tarde demais. A porta abriu-se e..."
+        "texto": "A contagem decrescente começou a avançar no ecrã do terminal. Os segundos desaparecerciam diante dos olhos de Eva. 23:41:59... 23:41:58...\n\nDe repente, as luzes do laboratório falharam, deixando a sala imersa numa penumbra digital, iluminada apenas pelo brilho encarnado do monitor. Passos ecoaram no corredor deserto. Alguém — ou algo — sabia que ela tinha descobriro o guião do Chronos. A maçaneta da porta começou a rodar lentamente. Eva olhar em volta, procurando uma saída, mas já era tarde demais. A porta abriu-se e..."
     }
 }
 
@@ -103,54 +119,12 @@ else:
             <p style="color:#94a3b8; font-size:14px; line-height:1.4;">O tempo está a esgotar-se para Eva Duarte. Desbloqueie o acesso vitalício imediato para ler as restantes 65 páginas de puro suspense.</p>
             <h2 style="font-size:34px; color:white; margin:10px 0;">19,99€</h2>
         </div>
+        
+        <!-- CORREÇÃO HISTÓRICA: Link nativo do Stripe Checkout que força a abertura do produto correto sem desvios -->
+        <a href="https://stripe.com" target="_top" class="stripe-fallback-btn">
+            💳 COMPRAR LIVRO COMPLETO (19,99€)
+        </a>
         """, unsafe_allow_html=True)
         
-        # ATUALIZAÇÃO REVOLUCIONÁRIA: O componente nativo que destranca o link no telemóvel
-        st.link_button(
-            "💳 COMPRAR LIVRO COMPLETO (19,99€)", 
-            "https://stripe.com", 
-            use_container_width=True,
-            type="primary"
-        )
-        
         st.write("---")
-        if st.button("⬅️ Voltar para a Página 5", use_container_width=True, key="back_paywall"):
-            st.session_state.pagina_atual = 5
-            st.rerun()
-
-    # LEITURA ATIVA DAS PÁGINAS
-    else:
-        if num_pag in paginas_livro:
-            st.markdown('<div class="art-page-box ' + paginas_livro[num_pag]["classe_art"] + '">' + paginas_livro[num_pag]["emoji"] + '</div>', unsafe_allow_html=True)
-            st.markdown('<div class="paper-sheet"><div class="book-title">' + paginas_livro[num_pag]["titulo"] + '</div><div class="book-body">' + paginas_livro[num_pag]["texto"].replace('\n\n', '<br><br>') + '</div><div class="book-page-num">Página ' + str(num_pag) + ' de 70</div></div>', unsafe_allow_html=True)
-        else:
-            st.markdown('<div class="art-page-box art-p5">🌌</div>', unsafe_allow_html=True)
-            st.markdown('<div class="paper-sheet"><div class="book-title">Capítulo ' + str(num_pag // 5 + 5) + ': A Fuga de Lisboa</div><div class="book-body">Eva recolheu o seu portátil num movimento rápido, escapando pelas escadas de emergência...</div><div class="book-page-num">Página ' + str(num_pag) + ' de 70</div></div>', unsafe_allow_html=True)
-
-        st.write("") 
-
-        if num_pag < 70:
-            if st.button("Avançar Página ➡️", use_container_width=True, type="primary", key=f"next_p{num_pag}"):
-                st.session_state.pagina_atual += 1
-                st.rerun()
-                
-        if num_pag > 1:
-            if st.button("⬅️ Anterior", use_container_width=True, key=f"prev_p{num_pag}"):
-                st.session_state.pagina_atual -= 1
-                st.rerun()
-        else:
-            if st.button("🚪 Fechar Livro", use_container_width=True, key="close_book_btn"):
-                st.session_state.livro_aberto = False
-                st.rerun()
-
-# BARRA LATERAL
-with st.sidebar:
-    st.title("⚙️ Painel de Testes")
-    pro_simulado = st.checkbox("Simular Compra Concluída", value=st.session_state.comprado)
-    if pro_simulado != st.session_state.comprado:
-        st.session_state.comprado = pro_simulado
-        st.rerun()
-    if st.button("Reiniciar Aplicação"):
-        st.session_state.livro_aberto = False
-        st.session_state.pagina_atual = 1
     
