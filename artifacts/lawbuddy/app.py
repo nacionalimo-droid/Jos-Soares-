@@ -16,12 +16,10 @@ st.set_page_config(
 )
 
 # ── Groq client (free AI) ─────────────────────────────────────────────────
+# ── Groq client (free AI) ───────────────────────────────────────────────────
 GROQ_API_KEY = "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"
+client = Groq(api_key=GROQ_API_KEY)
 
-client = OpenAI(
-    api_key=GROQ_API_KEY,
-    base_url="https://api.groq.com/openai/v1",
-)
 
 # ── Constants ─────────────────────────────────────────────────────────────
 FREE_MAX_TABS = 2
