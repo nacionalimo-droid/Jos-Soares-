@@ -46,7 +46,6 @@ with st.sidebar:
 # ==============================================================================
 # 🌹 NARRATIVA COMPLEXA ESCRITA: "A ROSA BRANCA DE SINTRA"
 # ==============================================================================
-# Toda a árvore de decisões já inventada, encadeada e escrita por extenso.
 HISTORIA = {
     "capitulo_1_inicio": {
         "titulo": "Capítulo 1: O Nevoeiro da Serra",
@@ -63,7 +62,6 @@ A pessoa ergueu-se lentamente. Os vossos olhares cruzaram-se através da bruma. 
         ]
     },
 
-    # --- RAMIFICAÇÃO 1: ROTA ROMÂNTICA ---
     "rota_romantica": {
         "titulo": "Capítulo 1: Um Toque na Bruma",
         "imagem": "https://unsplash.com",
@@ -79,7 +77,6 @@ De repente, ouve-se um estalar de ramos secos vindo do interior do palacete aban
         ]
     },
 
-    # --- RAMIFICAÇÃO 2: ROTA MISTÉRIO ---
     "rota_misterio": {
         "titulo": "Capítulo 1: Confronto na Quinta",
         "imagem": "https://unsplash.com",
@@ -95,7 +92,6 @@ O teu sangue gela. Como é que aquele desconhecido tem o diário perdido do teu 
         ]
     },
 
-    # --- RAMIFICAÇÃO 3: ROTA FUGA ---
     "rota_fuga": {
         "titulo": "Capítulo 1: A Sombra que Persegue",
         "imagem": "https://unsplash.com",
@@ -119,7 +115,6 @@ if st.session_state.no_atual == "capa":
     st.markdown("<h1 style='text-align: center; color: #fdfefe;'>🌹 A Rosa Branca de Sintra</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; font-style: italic; color: #bdc3c7;'>Um Romance Interativo de Mistério e Segredos Cruzados</p>", unsafe_allow_html=True)
     
-    # Capa bonita inspirada no título
     st.image("https://unsplash.com", caption="Edição Especial Vitalícia — Pro Gaming", use_container_width=True)
     
     st.write(
@@ -142,7 +137,7 @@ if st.session_state.no_atual == "capa":
             st.session_state.no_atual = "capitulo_1_inicio"
             st.rerun()
 
-# --- TELA 2: FLUXO DE LEITURA E DECISÕES (DINÂMICO) ---
+# --- TELA 2: FLUXO DE LEITURA E DECISÕES ---
 else:
     no = st.session_state.no_atual
     
@@ -154,4 +149,9 @@ else:
         st.warning("O clímax do Capítulo 1 foi atingido! O teu progresso emocional foi salvo.")
         st.write(
             "Descobriste os primeiros segredos da Quinta das Lágrimas e a tua personalidade começou a moldar "
-            "o rumo dos acontecimentos. No entanto, para entrares no **Capítulo 2: Os Segredos do Diário** e "
+            "o rumo dos acontecimentos. No entanto, para entrares no Capítulo 2: Os Segredos do Diário e "
+            "viveres esta grande aventura de vários dias com dezenas de finais, adquire o teu passe para sempre."
+        )
+        
+        st.markdown(
+            f'<a href="{STRIPE_PAYMENT_URL}" target="_blank" style="text-decoration: none;">'
