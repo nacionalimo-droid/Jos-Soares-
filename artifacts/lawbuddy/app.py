@@ -156,20 +156,11 @@ else:
     else:
         if num_pag in paginas_livro:
             # Ilustração em CSS e Emoji
-            st.markdown(f'<div class="art-page-box {paginas_livro[num_pag]["classe_art"]}">{paginas_livro[num_pag]["emoji"]}</div>', unsafe_allow_html=True)
+            st.markdown('<div class="art-page-box ' + paginas_livro[num_pag]["classe_art"] + '">' + paginas_livro[num_pag]["emoji"] + '</div>', unsafe_allow_html=True)
             
             # Corpo do livro em papel creme
-            st.markdown(f"""
-            <div class="paper-sheet">
-                <div class="book-title">{paginas_livro[num_pag]["titulo"]}</div>
-                <div class="book-body">{paginas_livro[num_pag]["texto"].replace('\n\n', '<br><br>')}</div>
-                <div class="book-page-num">Página {num_pag} de 70</div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown('<div class="paper-sheet"><div class="book-title">' + paginas_livro[num_pag]["titulo"] + '</div><div class="book-body">' + paginas_livro[num_pag]["texto"].replace('\n\n', '<br><br>') + '</div><div class="book-page-num">Página ' + str(num_pag) + ' de 70</div></div>', unsafe_allow_html=True)
         else:
-            # Páginas PRO estendidas
+            # Páginas PRO estendidas (Geração da história dinâmica até à página 70)
             st.markdown('<div class="art-page-box art-p5">🌌</div>', unsafe_allow_html=True)
-            st.markdown(f"""
-            <div class="paper-sheet">
-                <div class="book-title">Capítulo {num_pag // 5 + 5}: A Fuga de Lisboa</div>
-                    
+                 
