@@ -82,7 +82,7 @@ De repente, ouve-se um estalar de ramos secos vindo do interior do palacete aban
         "imagem": "https://unsplash.com",
         "texto": """A tua voz firme corta o silêncio da serra. A figura recua um passo, surpreendida com a tua audácia. Um sorriso enigmático e amargo surge nos seus lábios frios. 
 
-'As perguntas certas no lugar errado trazem consequências devastadoras', responde. A pessoa afasta a capa preta, revelando que segura um diário antigo com o brasão de armas da tua própria família gravado a ouro na capa de couro. 
+'As perguntas certas no lugar errado trazem consequências devastadoras', responde. A pessoa afasta a capa preta, revealing que segura um diário antigo com o brasão de armas da tua própria família gravado a ouro na capa de couro. 
 
 O teu sangue gela. Como é que aquele desconhecido tem o diário perdido do teu avô? Antes que possas avançar, um canídeo de grande porte surge de entre os arbustos, rosnando agressivamente na tua direção.""",
         "opcoes": [
@@ -155,3 +155,4 @@ else:
         
         st.markdown(
             f'<a href="{STRIPE_PAYMENT_URL}" target="_blank" style="text-decoration: none;">'
+    
