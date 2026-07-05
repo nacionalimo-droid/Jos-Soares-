@@ -11,7 +11,7 @@ if "pagina_atual" not in st.session_state:
 if "comprado" not in st.session_state:
     st.session_state.comprado = False
 
-# --- CONFIGURAÇÃO DE ESTILO COM BOTÃO DE REDIRECIONAMENTO BLINDADO ---
+# --- CONFIGURAÇÃO DE ESTILO: MODO LIVRO ---
 st.markdown("""
 <style>
     #MainMenu, footer, header {visibility: hidden;}
@@ -52,7 +52,8 @@ st.markdown("""
         border-radius: 12px; text-align: center; color: white; margin-bottom: 15px;
     }
 
-    .stripe-fallback-btn {
+    /* Estilo do Botão de Compra Estrito e Seguro */
+    .stripe-button-link {
         display: block !important;
         width: 100% !important;
         background: linear-gradient(135deg, #ff416c, #ff4b2b) !important;
@@ -86,7 +87,7 @@ paginas_livro = {
     },
     4: {
         "titulo": "Capítulo IV: A Próxima Vítima", "classe_art": "art-p4", "emoji": "👁️",
-        "texto": "O pânico paralisou as queixas de Eva enquanto a ambulância levava Tomás. De volta ao laboratório deserto, as suas mãos tremiam tanto que quase não conseguia digitar. O Chronos não era um espelho do futuro. Era um guião.\n\nCom o coração a bater no peito como um tambor frenético, Eva apagou os dados de Tomás e, lentamente, digitou o seu próprio nome no campo de análise biométrica. O servidor disparou, as ventoinhas rugiram e o ecrã piscou com caracteres vermelhos de erro antes de fixar o resultado final:\n\n[PREVISÃO: Eva Duarte. Paragem cardiorrespiratória por causas externas. Tempo restante: 23 horas, 42 minutos.]"
+        "texto": "O pânico paralisou as queixas de Eva enquanto a ambulância levava Tomás. De volta ao laboratório deserto, as suas mãos tremiam tanto que quase não conseguia digitar. O Chronos não era um espelho do futuro. Era um guião.\n\nCom o coração a bater no peito como um tambor frenético, Eva apagou os dados de Tomás e, lentamente, digitou o seu próprio nome no campo de análise biométrica. O servidor disparou, as ventoinhas rugiram e o ecrã piscou com caracteres vermelhos de erro antes de fixar o resultado final:\n\n[PREVISÃO: Eva Duarte. Paragem cardiorrespiratória por causas externas. Tempo restante: 23 horas, 42 minutes.]"
     },
     5: {
         "titulo": "Capítulo V: O Código Vermelho", "classe_art": "art-p5", "emoji": "🚨",
@@ -120,11 +121,36 @@ else:
             <h2 style="font-size:34px; color:white; margin:10px 0;">19,99€</h2>
         </div>
         
-        <!-- CORREÇÃO HISTÓRICA: Link nativo do Stripe Checkout que força a abertura do produto correto sem desvios -->
-        <a href="https://stripe.com" target="_top" class="stripe-fallback-btn">
+        <!-- O REDIRECIONAMENTO COM O LINK OFICIAL FORÇANDO A JANELA PRINCIPAL -->
+        <a href="https://buy.stripe.com/dRmfZhaBC321b0682rdQQ00" target="_top" class="stripe-button-link">
             💳 COMPRAR LIVRO COMPLETO (19,99€)
         </a>
         """, unsafe_allow_html=True)
         
         st.write("---")
+        if st.button("⬅️ Voltar para a Página 5", use_container_width=True, key="back_paywall"):
+            st.session_state.pagina_atual = 5
+            st.rerun()
+
+    # LEITURA ATIVA DAS PÁGINAS
+    else:
+        if num_pag in paginas_livro:
+            st.markdown('<div class="art-page-box ' + paginas_livro[num_pag]["classe_art"] + '">' + paginas_livro[num_pag]["emoji"] + '</div>', unsafe_allow_html=True)
+            st.markdown('<div class="paper-sheet"><div class="book-title">' + paginas_livro[num_pag]["titulo"] + '</div><div class="book-body">' + paginas_livro[num_pag]["texto"].replace('\n\n', '<br><br>') + '</div><div class="book-page-num">Página ' + str(num_pag) + ' de 70</div></div>', unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="art-page-box art-p5">🌌</div>', unsafe_allow_html=True)
+            st.markdown('<div class="paper-sheet"><div class="book-title">Capítulo ' + str(num_pag // 5 + 5) + ': A Fuga de Lisboa</div><div class="book-body">Eva recolheu o seu portátil num movimento rápido, escapando pelas escadas de emergência...</div><div class="book-page-num">Página ' + str(num_pag) + ' de 70</div></div>', unsafe_allow_html=True)
+
+        st.write("") 
+
+        if num_pag < 70:
+            if st.button("Avançar Página ➡️", use_container_width=True, type="primary", key=f"next_p{num_pag}"):
+                st.session_state.pagina_atual += 1
+                st.rerun()
+                
+        if num_pag > 1:
+            if st.button("⬅️ Anterior", use_container_width=True, key=f"prev_p{num_pag}"):
+                st.session_state.pagina_atual -= 1
+                st.rerun()
+else:
     
