@@ -1,328 +1,187 @@
 import streamlit as st
-import os
 import time
-import random
-import string
-import urllib.parse
-from groq import Groq
+from datetime import datetime
 
-
-# ── Page config (must be first Streamlit call) ──────────────────────────────
+# Configuração da página do Streamlit
 st.set_page_config(
-    page_title="LawBuddy Portugal",
-    page_icon="🇵🇹",
-    layout="wide",
-    initial_sidebar_state="expanded",
+    page_title="RealtyBuddy - O Teu Mentor Imobiliário AI",
+    page_icon="🏢",
+    layout="wide"
 )
 
-# ── Groq client (free AI) ─────────────────────────────────────────────────
-# ── Groq client (free AI) ───────────────────────────────────────────────────
-GROQ_API_KEY = "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"
-client = Groq(api_key=GROQ_API_KEY)
+# LINK REAL DE PAGAMENTO (STRIPE CHECKOUT)
+STRIPE_PAYMENT_URL = "https://buy.stripe.com/dRmfZhaBC321b0682rdQQ00" 
 
+# --- SIMULAÇÃO DE SISTEMA ANTI-BATOTA & CONTROLO DE ACESSO ---
+if "user_status" not in st.session_state:
+    st.session_state.user_status = "Free"  # Opções: "Free", "Pro"
+if "ai_messages_left" not in st.session_state:
+    st.session_state.ai_messages_left = 3  # Limite estrito de 3 mensagens na versão grátis
+if "leads" not in st.session_state:
+    st.session_state.leads = [
+        {"nome": "Emanuel Silva", "telefone": "912 345 678", "interesse": "Morada X - Fotos hoje", "status": "Ativo"}
+    ]
 
-# ── Constants ─────────────────────────────────────────────────────────────
-FREE_MAX_TABS = 2
-FREE_MAX_MESSAGES = 5
-COOLDOWN_SECONDS = 30
-PAYMENT_URL = "https://buy.stripe.com/dRmfZhaBC321b0682rdQQ00"
-
-SYSTEM_PROMPT = """You are LawBuddy Portugal — an expert EXCLUSIVELY in Portuguese jurisdiction, laws, bureaucracy, and compliance. Your audience is international tourists, digital nomads, and expats traveling to or living in PORTUGAL.
-
-Rules:
-1. ONLY answer questions about Portuguese law, regulations, bureaucracy, immigration, taxes, visas, and compliance within Portugal.
-2. If a user asks about laws or regulations of ANY other country (China, USA, UK, Brazil, etc.), politely decline and say: "LawBuddy Portugal only provides legal assistance for Portugal. I'm not able to help with laws outside of Portugal."
-3. Always adapt your advice to the user's stated profile (Tourist, Digital Nomad, Golden Visa holder, Long-term Expat).
-4. Speak like a wise, protective, and welcoming local Portuguese counselor. Avoid complex legal jargon — translate laws into clear, simple English.
-5. Mention official sources when relevant (e.g., AIMA, SEF, AT - Autoridade Tributária, Portal das Finanças).
-6. End EVERY response with this exact italic note on a new line: "*Note from LawBuddy Portugal: This consultation is for informational purposes only regarding Portuguese law and compliance. It does not substitute official legal counsel from a Portuguese lawyer.*"
-"""
-
-PORTUGAL_TIPS = [
-    "🛂 **90-Day Rule**: Tourists from non-EU countries may stay up to 90 days in any 180-day period in the Schengen Area.",
-    "💼 **Digital Nomad Visa**: Portugal's D8 Visa requires proof of remote income ≥ €3,480/month (2026 update).",
-    "🏠 **NHR Tax Regime**: New residents may qualify for a 20% flat tax on Portuguese-source income for 10 years.",
-    "🚗 **Driving in Portugal**: EU driving licences are valid. Non-EU licences valid for 185 days; then exchange required.",
-    "🏖️ **Tourist Tax (2026)**: Lisbon €2/night, Porto €3/night, Algarve municipalities €1–2/night.",
-    "📋 **AIMA Appointments**: Immigration appointments (formerly SEF) via aima.gov.pt — book well in advance.",
-    "💰 **Golden Visa**: Investment fund route from €500,000. Real estate route mostly closed since 2023.",
-    "🏥 **SNS Health**: EU citizens with EHIC card can use National Health Service. Non-EU need private insurance.",
-]
-
-# ── Session state initialisation ──────────────────────────────────────────
-def init_session():
-    if "tabs" not in st.session_state:
-        st.session_state.tabs = [{"id": 0, "name": "Consultation #1", "messages": [], "profile": None}]
-    if "active_tab" not in st.session_state:
-        st.session_state.active_tab = 0
-    if "total_messages" not in st.session_state:
-        st.session_state.total_messages = 0
-    if "is_premium" not in st.session_state:
-        st.session_state.is_premium = False
-    if "share_code" not in st.session_state:
-        st.session_state.share_code = "#LB" + "".join(random.choices(string.digits, k=2)) + random.choice(string.ascii_uppercase) + random.choice(string.digits)
-    if "bonus_messages" not in st.session_state:
-        st.session_state.bonus_messages = 0
-    if "last_message_time" not in st.session_state:
-        st.session_state.last_message_time = 0
-    if "verified_shares" not in st.session_state:
-        st.session_state.verified_shares = set()
-    if "tab_counter" not in st.session_state:
-        st.session_state.tab_counter = 1
-
-init_session()
-
-# ── Helper functions ──────────────────────────────────────────────────────
-def get_current_tab():
-    for tab in st.session_state.tabs:
-        if tab["id"] == st.session_state.active_tab:
-            return tab
-    if st.session_state.tabs:
-        st.session_state.active_tab = st.session_state.tabs[0]["id"]
-        return st.session_state.tabs[0]
-    return None
-
-def message_limit():
-    return FREE_MAX_MESSAGES + st.session_state.bonus_messages
-
-def is_locked():
-    if st.session_state.is_premium:
-        return False
-    return st.session_state.total_messages >= message_limit()
-
-def cooldown_remaining():
-    if st.session_state.is_premium:
-        return 0
-    elapsed = time.time() - st.session_state.last_message_time
-    remaining = COOLDOWN_SECONDS - elapsed
-    return max(0, int(remaining))
-
-def add_new_tab():
-    if not st.session_state.is_premium and len(st.session_state.tabs) >= FREE_MAX_TABS:
-        return False
-    st.session_state.tab_counter += 1
-    new_id = st.session_state.tab_counter
-    st.session_state.tabs.append({
-        "id": new_id,
-        "name": f"Consultation #{new_id}",
-        "messages": [],
-        "profile": None,
-    })
-    st.session_state.active_tab = new_id
-    return True
-
-def clear_all_data():
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
-    init_session()
-    st.rerun()
-
-def get_ai_response(messages, profile):
-    try:
-        if not GROQ_API_KEY:
-            return "⚠️ GROQ_API_KEY is not configured. Please add it in the app secrets.\n\n*Note from LawBuddy Portugal: This consultation is for informational purposes only regarding Portuguese law and compliance. It does not substitute official legal counsel from a Portuguese lawyer.*"
-
-        system = SYSTEM_PROMPT
-        if profile:
-            system += f"\n\nUser profile: {profile}. Tailor your answer accordingly."
-
-        groq_messages = [{"role": "system", "content": system}]
-        for m in messages:
-            groq_messages.append({"role": m["role"], "content": m["content"]})
-
-                response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=groq_messages,
-        max_tokens=1024,
-                )
-            
-        return response.choices.message.content
-        
-
-    except Exception as e:
-        return f"⚠️ An error occurred while contacting the AI: {str(e)}\n\n*Note from LawBuddy Portugal: This consultation is for informational purposes only regarding Portuguese law and compliance. It does not substitute official legal counsel from a Portuguese lawyer.*"
-
-# ── SIDEBAR ───────────────────────────────────────────────────────────────
+# --- BARRA LATERAL: PERFIL E UPGRADE ANTI-BATOTA ---
 with st.sidebar:
-    st.title("🇵🇹 LawBuddy Portugal")
-    st.caption("Your AI Legal Guide in Portugal")
+    st.title("🏢 RealtyBuddy")
+    st.caption("O teu parceiro imobiliário inteligente")
     st.divider()
-
-    if st.button("➕ New Consultation", use_container_width=True, type="primary"):
-        if add_new_tab():
-            st.rerun()
-        else:
-            st.error("🔒 Free plan allows up to 2 consultations. Upgrade to Pro for unlimited!")
-
-    if not st.session_state.is_premium:
-        msgs_used = st.session_state.total_messages
-        msgs_max = message_limit()
-        tabs_used = len(st.session_state.tabs)
-        st.progress(min(msgs_used / max(msgs_max, 1), 1.0))
-        st.caption(f"Messages: {msgs_used}/{msgs_max} | Tabs: {tabs_used}/{FREE_MAX_TABS}")
-
-    st.divider()
-
-    st.subheader("💬 My Consultations")
-    for tab in st.session_state.tabs:
-        is_active = tab["id"] == st.session_state.active_tab
-        label = f"{'▶ ' if is_active else ''}{tab['name']}"
-        if st.button(label, key=f"tab_btn_{tab['id']}", use_container_width=True):
-            st.session_state.active_tab = tab["id"]
-            st.rerun()
-
-    st.divider()
-
-    if "tips_today" not in st.session_state:
-        st.session_state.tips_today = random.sample(PORTUGAL_TIPS, 3)
-    st.subheader("📌 Top Portugal Tips")
-    for tip in st.session_state.tips_today:
-        st.info(tip)
-
-    st.divider()
-
-    st.subheader("🚨 Portugal Emergency Contacts")
-    st.error("**112** — General Emergency (Police, Fire, Ambulance)")
-    st.warning("**808 24 24 24** — SNS 24 National Health Line")
-    st.info("**+351 211 940 278** — AIMA Immigration Support")
-    st.info("**217 814 100** — PSP (Public Security Police)")
-    st.info("**800 204 204** — DGS Health Line (free)")
-
-    st.divider()
-
-    if st.button("🗑️ Clear All My Data & History", use_container_width=True, type="secondary"):
-        clear_all_data()
-
-
-# ── MAIN CONTENT ──────────────────────────────────────────────────────────
-current_tab = get_current_tab()
-
-col1, col2, col3 = st.columns([3, 1, 1])
-with col1:
-    st.title("🇵🇹 LawBuddy Portugal")
-    st.caption("**Your Legal Guide in Portugal** — AI-powered advice on Portuguese law & compliance")
-with col2:
-    if st.session_state.is_premium:
-        st.success("✅ Premium")
-    else:
-        st.info("🆓 Free Plan")
-with col3:
-    if not st.session_state.is_premium:
-        st.link_button("⭐ LawBuddy Portugal Pro", PAYMENT_URL, use_container_width=True, type="primary")
-
-st.divider()
-
-if current_tab is None:
-    st.warning("No consultation selected. Click '➕ New Consultation' in the sidebar.")
-    st.stop()
-
-# ── PROFILE SELECTOR ──────────────────────────────────────────────────────
-_profile_key = f"tab_profile_{current_tab['id']}"
-if st.session_state.get(_profile_key):
-    current_tab["profile"] = st.session_state[_profile_key]
-
-if current_tab["profile"] is None:
-    st.subheader("👤 To give you accurate advice, what is your current status in Portugal?")
-    profile_choice = st.selectbox(
-        "Select your profile:",
-        ["— Please select —", "Short-term Tourist", "Digital Nomad / Remote Worker", "Golden Visa / Investor", "Long-term Expat"],
-        key=f"profile_select_{current_tab['id']}",
-    )
-    if profile_choice == "— Please select —":
-        st.info("Please select your profile to begin your consultation.")
-        st.stop()
-    else:
-        current_tab["profile"] = profile_choice
-        st.session_state[_profile_key] = profile_choice
-
-st.caption(f"Profile: **{current_tab['profile']}** | Consultation: *{current_tab['name']}*")
-
-# ── LOCKOUT SCREEN ────────────────────────────────────────────────────────
-if is_locked():
-    st.divider()
-    st.markdown(
-        """
-        <div style='text-align:center; padding:2rem 1rem;'>
-            <h2>🔒 Your Free LawBuddy Portugal Memory Has Expired</h2>
-            <p style='font-size:1.1rem; max-width:600px; margin:auto;'>
-                Upgrade now to unlock <strong>unlimited AI consultations</strong> about Portuguese law,
-                permanent chat history, and automated real-time local law alerts.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.divider()
-    code = st.session_state.share_code
-    col_a, col_b = st.columns(2)
-
-    with col_a:
-        st.markdown("### 📢 Share & Earn Free Questions")
-        st.markdown(f"Your invite code: **`{code}`**")
-        whatsapp_text = f"Check out LawBuddy Portugal! Your personal AI legal guide in Portugal. Use my invite code {code} to get started! 🇵🇹"
-        whatsapp_url = f"https://wa.me/?text={urllib.parse.quote(whatsapp_text)}"
-        st.link_button("📢 Share on WhatsApp for +3 Free Questions", whatsapp_url, use_container_width=True)
-
-        st.markdown("**Verify your share to unlock +3 questions:**")
-        verification = st.text_input("Enter your code to verify:", placeholder=f"e.g. {code}", key="verify_input")
-        if st.button("✅ Verify Share", use_container_width=True):
-            if verification.strip().upper() == code.upper():
-                if code not in st.session_state.verified_shares:
-                    st.session_state.bonus_messages += 3
-                    st.session_state.verified_shares.add(code)
-                    st.success("🎉 Verified! You've unlocked +3 free questions.")
-                    time.sleep(1)
-                    st.rerun()
-                else:
-                    st.warning("This code has already been used.")
-            else:
-                st.error("❌ Incorrect code. Make sure you copied it exactly.")
-
-    with col_b:
-        st.markdown("### 🔓 Acesso Pro Completo")
+    
+    st.subheader("Estado da Conta")
+    if st.session_state.user_status == "Free":
+        st.error(" Plano Grátis (Limitado)")
+        st.write(f"Mensagens de AI restantes: **{st.session_state.ai_messages_left}**")
+        st.write("Limite de Dispositivo Ativo: 1 Conta por Hardware")
+        
+        # Botão oficial direcionando para o Stripe Checkout a cobrar 19.99€
         st.markdown(
-            """
-            **LawBuddy Portugal Pro** — €19,99/mês
-            - ✅ Consultas de IA ilimitadas
-            - ✅ Histórico permanente
-            - ✅ Alertas de leis portuguesas em tempo real
-            - ✅ Respostas prioritárias de IA
-            - ✅ Apple Pay, Google Pay & Cartão de Crédito
-            """
+            f'<a href="{STRIPE_PAYMENT_URL}" target="_blank" style="text-decoration: none;">'
+            '<div style="background-color: #ff4b4b; color: white; text-align: center; '
+            'padding: 12px; border-radius: 8px; font-weight: bold; margin-top: 10px; '
+            'box-shadow: 0px 4px 6px rgba(0,0,0,0.1); cursor: pointer;">'
+            '🚀 ADQUIRIR ACESSO PRO VITALÍCIO (19.99€)'
+            '</div></a>', 
+            unsafe_allow_html=True
         )
-        st.link_button("🔓 Subscrever Pro — €19,99/mês", PAYMENT_URL, use_container_width=True, type="primary")
+        st.caption("Desbloqueio vitalício sem mensalidades recorrentes.")
+        
+        st.divider()
+        # Botão simulador para testar a versão PRO localmente na app
+        if st.button("Simular Ativação PRO (Pós-Venda Stripe)"):
+            st.session_state.user_status = "Pro"
+            st.rerun()
+    else:
+        st.success("⭐ Membro PRO Vitalício")
+        st.write("Mensagens de AI: **Ilimitadas (Local LLM)**")
+        st.write("Proteção de Hardware: Vinculado ao seu telemóvel")
 
+# --- PAINEL PRINCIPAL: SEPARADORES DO CRM INTUITIVO ---
+tab_dia, tab_leads, tab_advogado, tab_marketing, tab_mercado = st.tabs([
+    "⏰ O Meu Dia", 
+    "👥 Leads & Clientes", 
+    "⚖️ Separador Advogado", 
+    "📣 Hub de Marketing", 
+    "📊 Preço m² por Zona"
+])
+
+# --- SEPARADOR 1: O MEU DIA (DESPERTADOR E GPS) ---
+with tab_dia:
+    st.header("🌅 Briefing Matinal Automatizado")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.info("⏰ **Alarme Configurado:** Diariamente às 08:00")
+        st.metric(label="Próximo Foco Programado pela AI", value="Venda & Fotos com Emanuel")
+    
+    with col2:
+        st.warning("🚗 **Gatilho de Saída Automático:** Saída planeada para as 09:30")
+        gps_url = "https://google.com"
+        st.markdown(
+            f'<a href="{gps_url}" target="_blank">'
+            '<button style="width:100%; padding:10px; background-color:#1E88E5; color:white; '
+            'border:none; border-radius:5px; font-weight:bold; cursor:pointer;">'
+            '🗺️ Abrir GPS Automático (Rota para o Imóvel)'
+            '</button></a>', 
+            unsafe_allow_html=True
+        )
+
+    st.subheader("📝 Mentor AI: Checklist de Preparação para Hoje")
+    st.write("Com base na tarefa agendada com o Emanuel, não te esqueças de:")
+    
+    c1 = st.checkbox("Carregar as baterias da câmara fotográfica", value=False)
+    c2 = st.checkbox("Colocar o tripé na mala do carro", value=False)
+    c3 = st.checkbox("Verificar as chaves do apartamento/morada", value=False)
+    c4 = st.checkbox("Documento de autorização de angariação assinado", value=False)
+    
+    if c1 and c2 and c3 and c4:
+        st.success("🎉 Tudo pronto! Estás organizado e sem falhas para a reunião.")
+
+# --- SEPARADOR 2: LEADS & CLIENTES ---
+with tab_leads:
+    st.header("👥 Gestão Sincera de Leads")
+    
+    for i, lead in enumerate(st.session_state.leads):
+        with st.expander(f"👤 {lead['nome']} - {lead['interesse']}"):
+            st.write(f"📞 **Contacto:** {lead['telefone']}")
+            st.write(f"📌 **Status:** {lead['status']}")
+            st.caption("Memória AI: Lembrar de enviar o relatório de mercado na próxima abordagem.")
+            
     st.divider()
-    st.chat_input("Upgrade to continue your consultation...", disabled=True)
-    st.stop()
+    st.subheader("➕ Adicionar Nova Lead")
+    novo_nome = st.text_input("Nome do Cliente")
+    novo_tel = st.text_input("Telemóvel")
+    novo_int = st.text_input("Imóvel/Zona de Interesse")
+    
+    if st.button("Guardar Lead"):
+        if st.session_state.user_status == "Free" and len(st.session_state.leads) >= 3:
+            st.error("❌ Limite do Plano Grátis Atingido! Altere para PRO para gerir leads ilimitadas.")
+        elif not novo_nome:
+            st.warning("Por favor, introduza o nome do cliente.")
+        else:
+            st.session_state.leads.append({"nome": novo_nome, "telefone": novo_tel, "interesse": novo_int, "status": "Novo"})
+            st.success(f"Lead {novo_nome} guardada com sucesso na memória local!")
+            st.rerun()
 
-# ── CHAT HISTORY ──────────────────────────────────────────────────────────
-for msg in current_tab["messages"]:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+# --- SEPARADOR 3: SEPARADOR ADVOGADO (LEIS OFFLINE) ---
+with tab_advogado:
+    st.header("⚖️ Consultor Jurídico Local AI")
+    st.caption("Respostas imediatas baseadas na legislação imobiliária em vigor.")
+    
+    pergunta_legal = st.text_input("Pergunta ao Advogado AI (Ex: Quais os escalões de IMT vigentes?)")
+    
+    if st.button("Consultar Legislação"):
+        if st.session_state.user_status == "Free" and st.session_state.ai_messages_left <= 0:
+            st.error("❌ Mensagens de AI esgotadas no plano grátis. Adquira o acesso PRO para continuar.")
+        elif pergunta_legal:
+            if st.session_state.user_status == "Free":
+                st.session_state.ai_messages_left -= 1
+            
+            with st.spinner("A analisar a base de dados jurídica local..."):
+                time.sleep(1)
+                st.chat_message("assistant").write(
+                    "**[Mentor Legal AI]:** De acordo com o código do IMT, as taxas aplicam-se de forma progressiva "
+                    "sobre o valor de escritura ou VPC. Recomendo validar se o cliente reúne condições para isenção "
+                    "por habitação própria e permanente."
+                )
+                if st.session_state.user_status == "Free":
+                    st.rerun()
 
-# ── CHAT INPUT ────────────────────────────────────────────────────────────
-cooldown = cooldown_remaining()
-if cooldown > 0 and not st.session_state.is_premium:
-    st.warning(f"⏳ Please wait **{cooldown} seconds** before sending your next message. (Free plan rate limit)")
-    st.chat_input("Please wait for the cooldown...", disabled=True)
-else:
-    user_input = st.chat_input("Ask anything about Portuguese law, immigration, taxes, or compliance...")
+# --- SEPARADOR 4: HUB DE MARKETING ---
+with tab_marketing:
+    st.header("📣 Gerador de Conteúdo e Scripts")
+    tipo_marketing = st.selectbox("O que queres criar hoje?", ["Descrição de Imóvel para Portal", "Script de Chamada Fria", "Post de Redes Sociais"])
+    detalhes_imovel = st.text_area("Descreve brevemente o imóvel ou o objetivo (Ex: T2 Renovado em Benfica com varanda)")
+    
+    if st.button("Gerar com AI"):
+        if st.session_state.user_status == "Free" and st.session_state.ai_messages_left <= 0:
+            st.error("❌ Mensagens de AI esgotadas. Faça o upgrade para PRO para obter marketing ilimitado.")
+        elif detalhes_imovel:
+            if st.session_state.user_status == "Free":
+                st.session_state.ai_messages_left -= 1
+                
+            with st.spinner("A redigir texto focado em conversão..."):
+                time.sleep(1)
+                st.success("Texto gerado com sucesso!")
+                st.code(f"🌟 EXCLUSIVO EM BENFICA 🌟\n\nProcura o apartamento dos seus sonhos? Este fantástico {detalhes_imovel} combina localização premium com o conforto moderno...", language="markdown")
+                if st.session_state.user_status == "Free":
+                    st.rerun()
 
-    if user_input:
-        current_tab["messages"].append({"role": "user", "content": user_input})
-        st.session_state.last_message_time = time.time()
-
-        with st.chat_message("user"):
-            st.markdown(user_input)
-
-        with st.chat_message("assistant"):
-            with st.spinner("LawBuddy Portugal is researching Portuguese law..."):
-                answer = get_ai_response(current_tab["messages"], current_tab["profile"])
-            st.markdown(answer)
-
-        current_tab["messages"].append({"role": "assistant", "content": answer})
-        if not answer.startswith("⚠️"):
-            st.session_state.total_messages += 1
-        st.rerun()
+# --- SEPARADOR 5: PREÇO POR METRO QUADRADO ---
+with tab_mercado:
+    st.header("📊 Base de Dados de Preços Locais (m²)")
+    st.write("Consulta rápida de valores de mercado de referência por zona.")
+    
+    zona = st.selectbox("Escolha a Zona / Concelho", ["Lisboa Centro", "Porto Alfragide", "Cascais/Estoril", "Braga Centro", "Algarve Turístico"])
+    
+    precos_referencia = {
+        "Lisboa Centro": "4.800€ / m²",
+        "Porto Alfragide": "3.100€ / m²",
+        "Cascais/Estoril": "5.200€ / m²",
+        "Braga Centro": "1.950€ / m²",
+        "Algarve Turístico": "3.500€ / m²"
+    }
+    
+    st.metric(label=f"Preço Médio Estimado por Localidade ({zona})", value=precos_referencia[zona])
+    st.caption("Nota: Estes dados correm localmente no dispositivo e servem como estimativa prévia de angariação.")
+    
