@@ -51,22 +51,6 @@ st.markdown("""
         background-color: #11131a; border: 2px solid #ef4444; padding: 35px 20px;
         border-radius: 12px; text-align: center; color: white; margin-bottom: 15px;
     }
-    
-    /* Estilo Premium para o Botão do Stripe Direto */
-    .stripe-btn {
-        display: block;
-        width: 100%;
-        background-color: #ff4b4b;
-        color: white !important;
-        text-align: center;
-        padding: 12px 0;
-        font-size: 16px;
-        font-weight: bold;
-        text-decoration: none;
-        border-radius: 8px;
-        margin-bottom: 15px;
-        border: none;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -74,7 +58,7 @@ st.markdown("""
 paginas_livro = {
     1: {
         "titulo": "Capítulo I: O Padrão Invisível", "classe_art": "art-p1", "emoji": "💻",
-        "texto": "Eva Duarte ajustou os óculos enquanto as linhas de código ciano passavam pelo ecrã do seu terminal no laboratório de inteligência artificial de Lisboa. Passava pouco da meia-noite. Lá fora, a chuva batia contra as janelas altas, mas dentro daquela sala o único som era o zumbido suave dos servidores.\n\nEla trabalhava no Chronos, um modelo preditivo avançado projetado para antecipar comportamentos de consumo. Mas nas últimas três semanas, o Chronos começara a fazer algo que violava as leis da própria probabilidade. Não estava apenas a adivinhar o que as pessoas iam comprar; estava a registar dados sobre eventos de vida altamente específicos antes mesmo de eles acontecerem."
+        "texto": "Eva Duarte ajustou os óculos enquanto as lines de código ciano passavam pelo ecrã do seu terminal no laboratório de inteligência artificial de Lisboa. Passava pouco da meia-noite. Lá fora, a chuva batia contra as janelas altas, mas dentro daquela sala o único som era o zumbido suave dos servidores.\n\nEla trabalhava no Chronos, um modelo preditivo avançado projetado para antecipar comportamentos de consumo. Mas nas últimas três semanas, o Chronos começara a fazer algo que violava as leis da própria probabilidade. Não estava apenas a adivinhar o que as pessoas iam comprar; estava a registar dados sobre eventos de vida altamente específicos antes mesmo de eles acontecerem."
     },
     2: {
         "titulo": "Capítulo II: O Teste de Sangue", "classe_art": "art-p2", "emoji": "🔬",
@@ -121,12 +105,13 @@ else:
         </div>
         """, unsafe_allow_html=True)
         
-        # CORREÇÃO CRÍTICA: HTML direto forçando a abertura imediata na mesma janela do telemóvel
-        st.markdown("""
-            <a href="https://stripe.com" target="_self" class="stripe-btn">
-                💳 COMPRAR LIVRO COMPLETO (19,99€)
-            </a>
-        """, unsafe_allow_html=True)
+        # ATUALIZAÇÃO REVOLUCIONÁRIA: O componente nativo que destranca o link no telemóvel
+        st.link_button(
+            "💳 COMPRAR LIVRO COMPLETO (19,99€)", 
+            "https://stripe.com", 
+            use_container_width=True,
+            type="primary"
+        )
         
         st.write("---")
         if st.button("⬅️ Voltar para a Página 5", use_container_width=True, key="back_paywall"):
@@ -156,3 +141,16 @@ else:
         else:
             if st.button("🚪 Fechar Livro", use_container_width=True, key="close_book_btn"):
                 st.session_state.livro_aberto = False
+                st.rerun()
+
+# BARRA LATERAL
+with st.sidebar:
+    st.title("⚙️ Painel de Testes")
+    pro_simulado = st.checkbox("Simular Compra Concluída", value=st.session_state.comprado)
+    if pro_simulado != st.session_state.comprado:
+        st.session_state.comprado = pro_simulado
+        st.rerun()
+    if st.button("Reiniciar Aplicação"):
+        st.session_state.livro_aberto = False
+        st.session_state.pagina_atual = 1
+    
