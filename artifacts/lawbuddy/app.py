@@ -1,5 +1,10 @@
+import streamlit as st
+import os
+import time
+import random
+import string
 import urllib.parse
-from openai import OpenAI
+import google.generativeai as genai
 
 # ── Page config (must be first Streamlit call) ──────────────────────────────
 st.set_page_config(
@@ -9,14 +14,16 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── OpenAI client ─────────────────────────────────────────────────────────
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY", ""))
+# ── Gemini client ─────────────────────────────────────────────────────────
+GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
+genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 # ── Constants ─────────────────────────────────────────────────────────────
 FREE_MAX_TABS = 2
 FREE_MAX_MESSAGES = 5
 COOLDOWN_SECONDS = 30
-WHOP_URL = "https://whop.com/lawbuddy-portugal"  # Update with your real Whop link
+PAYMENT_URL = "https://buy.stripe.com/dRmfZhaBC321b0682rdQQ00"
 
 SYSTEM_PROMPT = """You are LawBuddy Portugal — an expert EXCLUSIVELY in Portuguese jurisdiction, laws, bureaucracy, and compliance. Your audience is international tourists, digital nomads, and expats traveling to or living in PORTUGAL.
 
@@ -109,23 +116,27 @@ def clear_all_data():
     st.rerun()
 
 def get_ai_response(messages, profile):
-    """Call OpenAI API with the conversation history."""
     try:
+        if not GEMINI_API_KEY:
+            return "⚠️ GEMINI_API_KEY is not configured. Please add it in the app secrets.\n\n*Note from LawBuddy Portugal: This consultation is for informational purposes only regarding Portuguese law and compliance. It does not substitute official legal counsel from a Portuguese lawyer.*"
+
         system = SYSTEM_PROMPT
         if profile:
-            system += f"\n\nUser profile: {profile}. Tailor your answer accordingly (e.g., 90-day Schengen rule for tourists, NHR/D8 visa details for digital nomads, etc.)."
+            system += f"\n\nUser profile: {profile}. Tailor your answer accordingly."
 
-        openai_messages = [{"role": "system", "content": system}]
-        for m in messages:
-            openai_messages.append({"role": m["role"], "content": m["content"]})
+        history = []
+        for m in messages[:-1]:
+            role = "user" if m["role"] == "user" else "model"
+            history.append({"role": role, "parts": [m["content"]]})
 
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=openai_messages,
-            max_tokens=1024,
-            temperature=0.7,
-        )
-        return response.choices[0].message.content
+        chat = model.start_chat(history=history)
+        user_msg = messages[-1]["content"]
+        if not history:
+            user_msg = system + "\n\n---\n\nUser: " + user_msg
+
+        response = chat.send_message(user_msg)
+        return response.text
+
     except Exception as e:
         return f"⚠️ An error occurred while contacting the AI: {str(e)}\n\n*Note from LawBuddy Portugal: This consultation is for informational purposes only regarding Portuguese law and compliance. It does not substitute official legal counsel from a Portuguese lawyer.*"
 
@@ -135,14 +146,12 @@ with st.sidebar:
     st.caption("Your AI Legal Guide in Portugal")
     st.divider()
 
-    # New consultation button
     if st.button("➕ New Consultation", use_container_width=True, type="primary"):
         if add_new_tab():
             st.rerun()
         else:
-            st.error("🔒 Free plan allows up to 2 consultations. Upgrade to Whop for unlimited!")
+            st.error("🔒 Free plan allows up to 2 consultations. Upgrade to Pro for unlimited!")
 
-    # Usage indicator (free users)
     if not st.session_state.is_premium:
         msgs_used = st.session_state.total_messages
         msgs_max = message_limit()
@@ -152,7 +161,6 @@ with st.sidebar:
 
     st.divider()
 
-    # Conversation history (tabs list)
     st.subheader("💬 My Consultations")
     for tab in st.session_state.tabs:
         is_active = tab["id"] == st.session_state.active_tab
@@ -163,15 +171,14 @@ with st.sidebar:
 
     st.divider()
 
-    # Portugal compliance tips
+    if "tips_today" not in st.session_state:
+        st.session_state.tips_today = random.sample(PORTUGAL_TIPS, 3)
     st.subheader("📌 Top Portugal Tips")
-    tips_today = random.sample(PORTUGAL_TIPS, 3)
-    for tip in tips_today:
+    for tip in st.session_state.tips_today:
         st.info(tip)
 
     st.divider()
 
-    # Emergency contacts
     st.subheader("🚨 Portugal Emergency Contacts")
     st.error("**112** — General Emergency (Police, Fire, Ambulance)")
     st.warning("**808 24 24 24** — SNS 24 National Health Line")
@@ -181,7 +188,6 @@ with st.sidebar:
 
     st.divider()
 
-    # GDPR clear button
     if st.button("🗑️ Clear All My Data & History", use_container_width=True, type="secondary"):
         clear_all_data()
 
@@ -189,7 +195,6 @@ with st.sidebar:
 # ── MAIN CONTENT ──────────────────────────────────────────────────────────
 current_tab = get_current_tab()
 
-# Header
 col1, col2 = st.columns([4, 1])
 with col1:
     st.title("🇵🇹 LawBuddy Portugal")
@@ -198,7 +203,7 @@ with col2:
     if st.session_state.is_premium:
         st.success("✅ Premium")
     else:
-        st.info(f"🆓 Free Plan")
+        st.info("🆓 Free Plan")
 
 st.divider()
 
@@ -206,11 +211,10 @@ if current_tab is None:
     st.warning("No consultation selected. Click '➕ New Consultation' in the sidebar.")
     st.stop()
 
-# Profile selector (shown once per tab)
-# Use a flat session_state key as the source of truth (more reliable than nested dict mutation)
-_profile_state_key = f"tab_profile_{current_tab['id']}"
-if _profile_state_key in st.session_state and st.session_state[_profile_state_key]:
-    current_tab["profile"] = st.session_state[_profile_state_key]
+# ── PROFILE SELECTOR ──────────────────────────────────────────────────────
+_profile_key = f"tab_profile_{current_tab['id']}"
+if st.session_state.get(_profile_key):
+    current_tab["profile"] = st.session_state[_profile_key]
 
 if current_tab["profile"] is None:
     st.subheader("👤 To give you accurate advice, what is your current status in Portugal?")
@@ -224,10 +228,8 @@ if current_tab["profile"] is None:
         st.stop()
     else:
         current_tab["profile"] = profile_choice
-        st.session_state[_profile_state_key] = profile_choice
-        # No rerun needed — continue rendering the chat below
+        st.session_state[_profile_key] = profile_choice
 
-# Show profile badge
 st.caption(f"Profile: **{current_tab['profile']}** | Consultation: *{current_tab['name']}*")
 
 # ── LOCKOUT SCREEN ────────────────────────────────────────────────────────
@@ -251,7 +253,7 @@ if is_locked():
     col_a, col_b = st.columns(2)
 
     with col_a:
-        st.markdown(f"### 📢 Share & Earn Free Questions")
+        st.markdown("### 📢 Share & Earn Free Questions")
         st.markdown(f"Your invite code: **`{code}`**")
         whatsapp_text = f"Check out LawBuddy Portugal! Your personal AI legal guide in Portugal. Use my invite code {code} to get started! 🇵🇹"
         whatsapp_url = f"https://wa.me/?text={urllib.parse.quote(whatsapp_text)}"
@@ -273,18 +275,18 @@ if is_locked():
                 st.error("❌ Incorrect code. Make sure you copied it exactly.")
 
     with col_b:
-        st.markdown("### 🔓 Full Lifetime Access")
+        st.markdown("### 🔓 Acesso Pro Completo")
         st.markdown(
             """
-            **Whop Premium** — $19/month
-            - ✅ Unlimited AI consultations
-            - ✅ Permanent chat history
-            - ✅ Real-time Portuguese law alerts
-            - ✅ Priority AI responses
-            - ✅ Apple Pay, Google Pay & Credit Cards
+            **LawBuddy Portugal Pro** — €19,99/mês
+            - ✅ Consultas de IA ilimitadas
+            - ✅ Histórico permanente
+            - ✅ Alertas de leis portuguesas em tempo real
+            - ✅ Respostas prioritárias de IA
+            - ✅ Apple Pay, Google Pay & Cartão de Crédito
             """
         )
-        st.link_button("🔓 Unlock Full Access via Whop ($19/mo)", WHOP_URL, use_container_width=True, type="primary")
+        st.link_button("🔓 Subscrever Pro — €19,99/mês", PAYMENT_URL, use_container_width=True, type="primary")
 
     st.divider()
     st.chat_input("Upgrade to continue your consultation...", disabled=True)
@@ -304,21 +306,18 @@ else:
     user_input = st.chat_input("Ask anything about Portuguese law, immigration, taxes, or compliance...")
 
     if user_input:
-        # Append user message and record time
         current_tab["messages"].append({"role": "user", "content": user_input})
         st.session_state.last_message_time = time.time()
 
         with st.chat_message("user"):
             st.markdown(user_input)
 
-        # Get AI response — only count the message if the call succeeds
         with st.chat_message("assistant"):
             with st.spinner("LawBuddy Portugal is researching Portuguese law..."):
                 answer = get_ai_response(current_tab["messages"], current_tab["profile"])
             st.markdown(answer)
 
         current_tab["messages"].append({"role": "assistant", "content": answer})
-        # Increment quota only after a successful response
-        if not answer.startswith("⚠️ An error occurred"):
+        if not answer.startswith("⚠️"):
             st.session_state.total_messages += 1
         st.rerun()
