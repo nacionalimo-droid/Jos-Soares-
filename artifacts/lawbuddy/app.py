@@ -131,9 +131,9 @@ def get_ai_response(messages, profile):
             groq_messages.append({"role": m["role"], "content": m["content"]})
 
                 response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=groq_messages,
-            max_tokens=1024,
+        model="llama-3.3-70b-versatile",
+        messages=groq_messages,
+        max_tokens=1024,
                 )
             
         return response.choices.message.content
