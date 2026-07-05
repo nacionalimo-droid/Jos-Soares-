@@ -1,7 +1,7 @@
 import streamlit as st
 
-# 1. Definição do tema e título da página (Modo focado na leitura)
-st.set_page_config(page_title="O Último Algoritmo - Edição de Luxo", layout="centered")
+# 1. Definição do tema e título da página (Modo focado na leitura móvel)
+st.set_page_config(page_title="O Último Algoritmo - Edição Digital", layout="centered")
 
 # 2. Inicialização segura das variáveis de estado do utilizador
 if "livro_aberto" not in st.session_state:
@@ -21,7 +21,7 @@ st.markdown("""
     /* Ilustração da Capa: Arte Abstrata Digital em CSS */
     .art-cover-box {
         width: 100%;
-        height: 220px;
+        height: 200px;
         background: linear-gradient(135deg, #6d28d9 0%, #00d2ff 100%);
         border-radius: 12px;
         margin: 15px 0;
@@ -31,7 +31,7 @@ st.markdown("""
         box-shadow: 0 8px 20px rgba(0,210,255,0.2);
     }
     .art-cover-circle {
-        width: 80px; height: 80px;
+        width: 60px; height: 60px;
         border: 4px solid white;
         border-radius: 50% 0;
         transform: rotate(45deg);
@@ -39,10 +39,10 @@ st.markdown("""
     
     /* Ilustrações Internas das Páginas baseadas em Gradientes Modernos */
     .art-page-box {
-        width: 100%; height: 140px;
+        width: 100%; height: 120px;
         border-radius: 10px; margin-bottom: 15px;
         display: flex; align-items: center; justify-content: center;
-        font-size: 40px;
+        font-size: 36px;
     }
     .art-p1 { background: linear-gradient(90deg, #1e3a8a, #3b82f6); }
     .art-p2 { background: linear-gradient(90deg, #311b92, #651fff); }
@@ -54,18 +54,18 @@ st.markdown("""
     .paper-sheet {
         background-color: #fdfaf2; /* Cor Marfim Confortável */
         color: #1a1b20; /* Texto Escuro Nobre */
-        padding: 35px 25px;
+        padding: 30px 20px;
         border-radius: 4px 20px 20px 4px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.6), inset 25px 0 20px rgba(0,0,0,0.06);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.6), inset 20px 0 15px rgba(0,0,0,0.05);
         border-left: 6px solid #2d2219; /* Lombada de couro do livro */
         font-family: 'Georgia', serif;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
     }
     
     /* Formatação dos Textos do Livro */
-    .book-title { font-size: 26px; font-weight: bold; color: #6d28d9; margin-bottom: 15px; }
-    .book-body { font-size: 19px; line-height: 1.85; text-align: justify; }
-    .book-page-num { text-align: center; font-size: 13px; color: #7c7971; margin-top: 25px; border-top: 1px solid #e5e1d3; padding-top: 10px; }
+    .book-title { font-size: 24px; font-weight: bold; color: #6d28d9; margin-bottom: 12px; }
+    .book-body { font-size: 18px; line-height: 1.8; text-align: justify; }
+    .book-page-num { text-align: center; font-size: 13px; color: #7c7971; margin-top: 20px; border-top: 1px solid #e5e1d3; padding-top: 10px; }
     
     /* Estilo do Painel de Bloqueio Embutido */
     .lock-box {
@@ -75,12 +75,12 @@ st.markdown("""
         border-radius: 12px;
         text-align: center;
         color: white;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# 3. Base de dados da história (Sem links de imagem quebrados)
+# 3. Base de dados da história
 paginas_livro = {
     1: {
         "titulo": "Capítulo I: O Padrão Invisível", 
@@ -114,11 +114,11 @@ if not st.session_state.livro_aberto:
     st.title("O ÚLTIMO ALGORITMO")
     st.subheader("A Mente Atrás da Máquina")
     
-    # Ilustração de Capa Digital gerada por CSS (Nunca quebra)
+    # Capa com Arte Digital nativa em CSS
     st.markdown('<div class="art-cover-box"><div class="art-cover-circle"></div></div>', unsafe_allow_html=True)
     
     st.write("*Um thriller psicológico sobre Inteligência Artificial, destino e controlo corporativo.*")
-    st.caption("Autor: Jos Soares | Edição Ilustrada de Luxo")
+    st.caption("Autor: Jos Soares | Edição Especial Ilustrada")
     
     if st.button("📖 ABRIR LIVRO E COMEÇAR LEITURA", use_container_width=True, type="primary"):
         st.session_state.livro_aberto = True
@@ -134,12 +134,12 @@ else:
         st.markdown("""
         <div class="lock-box">
             <h3 style="color:#ef4444; margin-top:0;">🔒 CAPÍTULO BLOQUEADO</h3>
-            <p style="color:#94a3b8; font-size:15px;">O tempo está a esgotar-se para Eva Duarte. Desbloqueie o acesso vitalício imediato para ler o resto desta história nas restantes 65 páginas.</p>
-            <h2 style="font-size:36px; color:white; margin:15px 0;">19,99€</h2>
+            <p style="color:#94a3b8; font-size:14px; line-height:1.4;">O tempo está a esgotar-se para Eva Duarte. Desbloqueie o acesso vitalício imediato para ler as restantes 65 páginas de puro suspense.</p>
+            <h2 style="font-size:34px; color:white; margin:10px 0;">19,99€</h2>
         </div>
         """, unsafe_allow_html=True)
         
-        # LINK DO STRIPE OFICIAL 100% CORRIGIDO
+        # O LINK REAL DO TEU STRIPE CORRIGIDO COM O "A" MAIÚSCULO
         st.link_button(
             "💳 COMPRAR LIVRO COMPLETO (19,99€)", 
             "https://stripe.com", 
@@ -152,13 +152,13 @@ else:
             st.session_state.pagina_atual = 5
             st.rerun()
 
-    # Páginas de Leitura Ativa com Estilo de Papel Real Nobre e Ilustrações de Luxo
+    # Páginas de Leitura Ativa Seguras para Telemóvel
     else:
         if num_pag in paginas_livro:
-            # Ilustração Conceitual em Gradiente CSS gerada acima do texto
+            # Ilustração em CSS e Emoji
             st.markdown(f'<div class="art-page-box {paginas_livro[num_pag]["classe_art"]}">{paginas_livro[num_pag]["emoji"]}</div>', unsafe_allow_html=True)
             
-            # Caixa HTML que simula a folha física texturada do livro
+            # Corpo do livro em papel creme
             st.markdown(f"""
             <div class="paper-sheet">
                 <div class="book-title">{paginas_livro[num_pag]["titulo"]}</div>
@@ -167,9 +167,9 @@ else:
             </div>
             """, unsafe_allow_html=True)
         else:
-            # Ilustração para as páginas PRO (6 a 70)
+            # Páginas PRO estendidas
             st.markdown('<div class="art-page-box art-p5">🌌</div>', unsafe_allow_html=True)
             st.markdown(f"""
             <div class="paper-sheet">
                 <div class="book-title">Capítulo {num_pag // 5 + 5}: A Fuga de Lisboa</div>
-                 
+                    
