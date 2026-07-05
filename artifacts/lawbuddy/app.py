@@ -4,7 +4,8 @@ import time
 import random
 import string
 import urllib.parse
-from openai import OpenAI
+from groq import Groq
+
 
 # ── Page config (must be first Streamlit call) ──────────────────────────────
 st.set_page_config(
