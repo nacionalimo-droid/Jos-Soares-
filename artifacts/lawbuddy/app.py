@@ -4,7 +4,7 @@ import time
 import random
 import string
 import urllib.parse
-import google.generativeai as genai
+from openai import OpenAI
 
 # ── Page config (must be first Streamlit call) ──────────────────────────────
 st.set_page_config(
@@ -14,10 +14,12 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Gemini client ─────────────────────────────────────────────────────────
-GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-1.5-flash")
+# ── Groq client (free AI) ─────────────────────────────────────────────────
+GROQ_API_KEY = st.secrets.get("GROQ_API_KEY", os.environ.get("GROQ_API_KEY", ""))
+client = OpenAI(
+    api_key=GROQ_API_KEY,
+    base_url="https://api.groq.com/openai/v1",
+)
 
 # ── Constants ─────────────────────────────────────────────────────────────
 FREE_MAX_TABS = 2
@@ -117,25 +119,23 @@ def clear_all_data():
 
 def get_ai_response(messages, profile):
     try:
-        if not GEMINI_API_KEY:
-            return "⚠️ GEMINI_API_KEY is not configured. Please add it in the app secrets.\n\n*Note from LawBuddy Portugal: This consultation is for informational purposes only regarding Portuguese law and compliance. It does not substitute official legal counsel from a Portuguese lawyer.*"
+        if not GROQ_API_KEY:
+            return "⚠️ GROQ_API_KEY is not configured. Please add it in the app secrets.\n\n*Note from LawBuddy Portugal: This consultation is for informational purposes only regarding Portuguese law and compliance. It does not substitute official legal counsel from a Portuguese lawyer.*"
 
         system = SYSTEM_PROMPT
         if profile:
             system += f"\n\nUser profile: {profile}. Tailor your answer accordingly."
 
-        history = []
-        for m in messages[:-1]:
-            role = "user" if m["role"] == "user" else "model"
-            history.append({"role": role, "parts": [m["content"]]})
+        groq_messages = [{"role": "system", "content": system}]
+        for m in messages:
+            groq_messages.append({"role": m["role"], "content": m["content"]})
 
-        chat = model.start_chat(history=history)
-        user_msg = messages[-1]["content"]
-        if not history:
-            user_msg = system + "\n\n---\n\nUser: " + user_msg
-
-        response = chat.send_message(user_msg)
-        return response.text
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=groq_messages,
+            max_tokens=1024,
+        )
+        return response.choices[0].message.content
 
     except Exception as e:
         return f"⚠️ An error occurred while contacting the AI: {str(e)}\n\n*Note from LawBuddy Portugal: This consultation is for informational purposes only regarding Portuguese law and compliance. It does not substitute official legal counsel from a Portuguese lawyer.*"
