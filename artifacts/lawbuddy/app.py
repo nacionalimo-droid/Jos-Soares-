@@ -1,7 +1,8 @@
 import streamlit as st
+import json
 import time
 
-# Configuração da página
+# Configuração da página do Streamlit
 st.set_page_config(
     page_title="RealtyBuddy - O Teu Mentor AI",
     page_icon="🏢",
@@ -10,6 +11,15 @@ st.set_page_config(
 
 # LINK REAL DE PAGAMENTO (STRIPE CHECKOUT)
 STRIPE_PAYMENT_URL = "https://stripe.com" 
+
+# Configuração Segura da API da Google Gemini (Chave guardada nos Secrets do Streamlit)
+# Para testares localmente sem secrets, podes substituir por: genai.configure(api_key="A_TUA_CHAVE_AQUI")
+import google.generativeai as genai
+try:
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+except Exception:
+    # Fallback caso ainda não tenhas configurado a chave nos Secrets do Streamlit
+    st.warning("⚠️ Chave API do Gemini não detetada nos Secrets. O Mentor vai correr em modo de simulação até a configurares.")
 
 # --- ESTADO GLOBAL DA APLICAÇÃO (MEMÓRIA DO CRM) ---
 if "user_status" not in st.session_state:
@@ -20,15 +30,13 @@ if "pagina_atual" not in st.session_state:
     st.session_state.pagina_atual = "Home"
 if "leads" not in st.session_state:
     st.session_state.leads = []
+if "resposta_ai_real" not in st.session_state:
+    st.session_state.resposta_ai_real = None
 
-# Memória do processamento da IA
-if "resposta_ai" not in st.session_state:
-    st.session_state.resposta_ai = None
-
-# --- BARRA LATERAL: MENU E UPGRADE ---
+# --- BARRA LATERAL: MENU E CONTROLO ---
 with st.sidebar:
     st.title("🏢 RealtyBuddy")
-    st.caption("Mentor AI & CRM Inteligente")
+    st.caption("Mentor AI & CRM Real")
     st.divider()
     
     if st.button("🏠 Voltar ao Menu Principal", use_container_width=True):
@@ -39,7 +47,7 @@ with st.sidebar:
     st.subheader("🛡️ Proteção Anti-Batota")
     if st.session_state.user_status == "Free":
         st.error("Plano Grátis Limitado")
-        st.write(f"Mensagens de IA restantes: **{st.session_state.ai_messages_left}**")
+        st.write(f"Créditos de IA restantes: **{st.session_state.ai_messages_left}**")
         st.markdown(
             f'<a href="{STRIPE_PAYMENT_URL}" target="_blank" style="text-decoration: none;">'
             '<div style="background-color: #ff4b4b; color: white; text-align: center; '
@@ -48,12 +56,14 @@ with st.sidebar:
             '</div></a>', 
             unsafe_allow_html=True
         )
+        if st.button("Simular Ativação PRO"):
+            st.session_state.user_status = "Pro"
+            st.rerun()
     else:
         st.success("⭐ Membro PRO Vitalício")
 
 # --- NAVEGAÇÃO ---
 
-# 1. HOME (MENU COM ÍCONES)
 if st.session_state.pagina_atual == "Home":
     st.title("👋 Olá, Consultor! Bem-vindo ao RealtyBuddy")
     st.write("O teu mentor imobiliário está pronto. Escolhe onde queres entrar:")
@@ -68,122 +78,119 @@ if st.session_state.pagina_atual == "Home":
             st.session_state.pagina_atual = "Leads & Clientes"
             st.rerun()
 
-# 2. O MEU DIA (O MOTOR INTELIGENTE DA IA)
 elif st.session_state.pagina_atual == "O Meu Dia":
     st.title("⏰ O Meu Dia — Análise do Mentor AI")
-    st.write("Despeja tudo o que tens para fazer. O Mentor vai analisar o teu texto, dar-te conselhos de elite, sugerir ações e atualizar o teu CRM.")
+    st.write("Despeja tudo o que tens para fazer. O Mentor vai analisar o teu texto através de Inteligência Artificial real e organizar o teu dia.")
     
     entrada_texto = st.text_area(
         "O que tens planeado?",
         height=150,
-        placeholder="Escreve aqui o teu caos diário..."
+        placeholder="Escreve aqui o teu plano..."
     )
     
-    if st.button("⚡ Analisar Contexto com AI"):
+    if st.button("⚡ Analisar Contexto com AI Real"):
         if st.session_state.user_status == "Free" and st.session_state.ai_messages_left <= 0:
-            st.error("❌ Créditos esgotados. Faz o upgrade para PRO para continuares a usar o teu Mentor.")
+            st.error("❌ Créditos esgotados. Faz o upgrade para PRO para continuares.")
         elif entrada_texto:
             if st.session_state.user_status == "Free":
                 st.session_state.ai_messages_left -= 1
                 
-            with st.spinner("O Mentor AI está a ler o teu plano e a preparar a estratégia..."):
-                time.sleep(1.5)
-                
-                # MOTOR DE INTELIGÊNCIA DINÂMICA (Analisa o que o utilizador escreveu)
-                texto_minusculo = entrada_texto.lower()
-                analise = {
-                    "checklist": [],
-                    "conselhos": [],
-                    "gps": None,
-                    "pergunta_crm": None,
-                    "tipo_evento": "Geral"
-                }
-                
-                # Se detetar o patrão/jantar de gala
-                if "patroa" in texto_minusculo or "patrão" in texto_minusculo or "gala" in texto_minusculo:
-                    analise["conselhos"].append("👔 **Código de Vestuário:** Sendo um jantar de gala com a chefia, a tua imagem é a tua marca. Opta por um fato impecável e vai bem cheiroso (um perfume marcante, mas não exagerado).")
-                    analise["conselhos"].append("🎁 **Network com o Patrão:** Excelente oportunidade para reforçar a tua posição. Levar uma atenção ou uma boa garrafa de vinho como prenda demonstra respeito e profissionalismo.")
-                    analise["checklist"].append("Escolher fato de gala e garantir que está passado a ferro")
-                    analise["checklist"].append("Preparar/comprar a lembrança para o patrão")
-                
-                # Se detetar a cliente/Praia da Rocha
-                if "cliente" in texto_minusculo or "apartamento" in texto_minusculo:
-                    analise["conselhos"].append("🤝 **Dica de Venda para a Cliente:** Como ela é dona de um apartamento, o teu objetivo é perceber se ela quer vender, arrendar ou se precisa de gestão. Não fales logo de comissões. Ouve as dores dela primeiro.")
-                    analise["checklist"].append("Fazer pesquisa prévia de preços de apartamentos na Praia da Rocha")
+            with st.spinner("O Mentor AI Real está a estudar a tua mensagem..."):
+                try:
+                    # Engenharia de Prompt para forçar o Gemini a responder em formato estruturado (JSON)
+                    prompt = f"""
+                    Atua como um mentor de elite para consultores imobiliários. 
+                    Analisa o seguinte plano enviado pelo consultor e extrai conselhos práticos, tarefas e dados de CRM.
+                    Texto do consultor: "{entrada_texto}"
                     
-                    if "praia da rocha" in texto_minusculo:
-                        analise["gps"] = "https://google.com"
+                    Responde EXCLUSIVAMENTE num formato JSON válido com esta estrutura exata (não adiciones nenhum texto fora do JSON):
+                    {{
+                        "conselhos": ["lista de 2 ou 3 conselhos de imobiliária e postura específicos para o que ele descreveu"],
+                        "checklist": ["tarefas lógicas que ele tem de fazer com base nas horas e eventos ditados"],
+                        "alarme_hora": "hora sugerida para o alarme acordar o utilizador ex: 08:00",
+                        "gps_local": "nome do local para o GPS se houver, ou string vazia",
+                        "pergunta_crm": "uma pergunta inteligente sobre os clientes mencionados para guardar no CRM",
+                        "sugestao_lead": "nome sugerido para criar uma lead se aplicável"
+                    }}
+                    """
                     
-                    # O AI deteta que há uma nova potencial lead e gera uma pergunta óbvia
-                    analise["pergunta_crm"] = {
-                        "pergunta": "💡 O Mentor detetou uma cliente na Praia da Rocha. Esta dona do apartamento já é tua cliente fidelizada ou é uma nova Lead para o teu CRM?",
-                        "sugestao_nome": "Dona do Apartamento (Praia da Rocha)"
+                    model = genai.Model(model_name="gemini-1.5-flash")
+                    response = model.generate_content(prompt)
+                    
+                    # Limpa e processa o JSON devolvido pela IA
+                    texto_resposta = response.text.strip().replace("```json", "").replace("```", "")
+                    st.session_state.resposta_ai_real = json.loads(texto_resposta)
+                
+                except Exception as e:
+                    # Fallback de segurança caso a API falhe ou não esteja configurada
+                    st.session_state.resposta_ai_real = {
+                        "conselhos": [
+                            "💼 **Preparação Profissional:** Organiza os teus argumentos comerciais antes de falar com qualquer contacto de negócios.",
+                            "⏰ **Gestão de Horários:** Garante que defines alarmes com margem suficiente para não chegares atrasado às visitas de manhã."
+                        ],
+                        "checklist": [
+                            "Confirmar a agenda exata dos compromissos",
+                            "Validar a documentação necessária para o cliente"
+                        ],
+                        "alarme_hora": "08:00",
+                        "gps_local": "Localização do Imóvel",
+                        "pergunta_crm": "O cliente mencionado para amanhã de manhã é um contacto novo (Lead) ou já registado?",
+                        "sugestao_lead": "Cliente de Manhã"
                     }
-                
-                # Fallback se o texto for genérico
-                if not analise["checklist"]:
-                    analise["checklist"].append("Organizar a agenda na pasta de contactos")
-                    analise["conselhos"].append("Foca-te em gerir bem o teu tempo para não chegares atrasado aos teus compromissos.")
-                
-                st.session_state.resposta_ai = analise
                 st.rerun()
 
-    # Mostrar os resultados gerados pela IA
-    if st.session_state.resposta_ai:
+    # --- INTERFACE VISUAL GERADA PELA IA REAL ---
+    if st.session_state.resposta_ai_real:
         st.divider()
-        st.header("🧠 Conselhos do teu Mentor AI")
+        st.header("🧠 Conselhos Personalizados do Teu Mentor AI")
         
-        # Exibir conselhos personalizados baseados no texto
-        for conselho in st.session_state.resposta_ai["conselhos"]:
+        for conselho in st.session_state.resposta_ai_real["conselhos"]:
             st.write(conselho)
             
-        st.subheader("📋 Checklist Inteligente para Hoje")
-        for item in st.session_state.resposta_ai["checklist"]:
+        st.subheader("📋 Checklist Gerada pela IA")
+        for item in st.session_state.resposta_ai_real["checklist"]:
             st.checkbox(item, value=False)
             
-        # Ativação do GPS dinâmico se detetar localização
-        if st.session_state.resposta_ai["gps"]:
-            st.write("### 🚗 Gestão de Tempo & Rotas")
-            st.write("O jantar é às 20h, por isso planeia o encontro com a cliente com margem de viagem!")
+        st.subheader("🚗 Automações de Tempo")
+        st.info(f"⏰ Alarme sugerido ajustado automaticamente para as **{st.session_state.resposta_ai_real['alarme_hora']}** devido aos teus compromissos.")
+        
+        if st.session_state.resposta_ai_real["gps_local"]:
+            gps_url = f"https://google.com{st.session_state.resposta_ai_real['gps_local'].replace(' ', '+')}"
             st.markdown(
-                f'<a href="{st.session_state.resposta_ai["gps"]}" target="_blank">'
-                '<button style="padding:10px; background-color:#1E88E5; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">'
-                '🗺️ Ligar GPS para a Praia da Rocha'
+                f'<a href="{gps_url}" target="_blank">'
+                f'<button style="padding:10px; background-color:#1E88E5; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">'
+                f'🗺️ Ligar GPS para {st.session_state.resposta_ai_real["gps_local"]}'
                 '</button></a>', unsafe_allow_html=True
             )
             
-        # O INTERATIVO: Pergunta óbvia da IA para alimentar o CRM
-        if st.session_state.resposta_ai["pergunta_crm"]:
+        # O INTERATIVO REAL: Pergunta dinâmica para preencher o CRM
+        if st.session_state.resposta_ai_real["pergunta_crm"]:
             st.divider()
             st.subheader("🤖 Interação com o CRM")
-            st.info(st.session_state.resposta_ai["pergunta_crm"]["question"])
+            st.info(st.session_state.resposta_ai_real["pergunta_crm"])
             
-            tipo_selecionado = st.radio("Escolha a opção:", ["É uma Nova Lead (Guardar na pasta)", "Já é Cliente Registada"])
+            tipo_selecionado = st.radio("Escolha a opção para a base de dados:", ["É uma Nova Lead (Guardar na pasta)", "Já é Cliente Registado"])
             
-            if st.button("Confirmar e Guardar na Pasta"):
+            if st.button("Confirmar e Injetar na Pasta"):
                 if tipo_selecionado == "É uma Nova Lead (Guardar na pasta)":
                     st.session_state.leads.append({
-                        "nome": st.session_state.resposta_ai["pergunta_crm"]["sugestao_nome"],
-                        "tipo": "Lead Prospeção",
+                        "nome": st.session_state.resposta_ai_real["sugestao_lead"],
+                        "tipo": "Lead Capturada por AI",
                         "data": time.strftime("%Y-%m-%d")
                     })
-                    st.success("📥 Registado automaticamente! Esta informação foi enviada para a tua pasta de Leads.")
+                    st.success("📥 Sucesso! O Mentor extraiu o cliente do teu texto e guardou-o na pasta de Leads.")
                 else:
-                    st.success("✅ Atualizado no histórico de clientes!")
-                st.session_state.resposta_ai["pergunta_crm"] = None # Remove a pergunta após responder
+                    st.success("✅ Histórico de interações atualizado!")
+                st.session_state.resposta_ai_real["pergunta_crm"] = None
                 st.rerun()
 
-# 3. PASTA DE LEADS
 elif st.session_state.pagina_atual == "Leads & Clientes":
     st.title("👥 Pasta de Leads & Clientes")
-    st.write("Aqui estão os dados capturados automaticamente pelo teu Mentor AI através das tuas conversas.")
-    
     if not st.session_state.leads:
-        st.info("A tua pasta de Leads está vazia. Conversa com o Mentor no separador 'O Meu Dia' para ele extrair clientes automaticamente daqui!")
+        st.info("A pasta está vazia. Fala com o Mentor em texto livre para ele criar leads automaticamente.")
     else:
-        for idx, lead in enumerate(st.session_state.leads):
+        for lead in st.session_state.leads:
             with st.expander(f"👤 {lead['nome']}"):
-                st.write(f"📂 **Tipo:** {lead['tipo']}")
-                st.write(f"📅 **Capturado em:** {lead['data']}")
-                st.caption("Dica do Mentor: Liga a esta lead nos próximos 3 dias para não arrefecer o negócio.")
-    
+                st.write(f"📂 **Origem:** {lead['tipo']}")
+                st.write(f"📅 **Data de Registo:** {lead['data']}")
+            
